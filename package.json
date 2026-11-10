@@ -1,0 +1,18 @@
+{
+  "name": "devrel-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Collects DevRel metrics from every source into dated snapshots",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "status": "node --env-file-if-exists=.env src/cli.js status",
+    "collect": "node --env-file-if-exists=.env src/cli.js collect",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@google-analytics/data": "^4.12.1"
+  }
+}

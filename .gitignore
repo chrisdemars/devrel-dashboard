@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Secrets and credentials (API keys, tokens): never commit
+.env
+.env.*
+!.env.example
+secrets/
+
+# Collected metrics and manual logs (may contain lead and deal details)
+data/
+
+# OS and local tool files
+.DS_Store
+CLAUDE.local.md
