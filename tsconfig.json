@@ -20,6 +20,7 @@
     ],
     "paths": {
       "@devrel/*": ["./config/devrel.*", "./devrel.*.example"],
+      "@devrel-theme/*": ["./config/*", "./src/theme/org/*"],
       "@/*": ["./src/*"]
     }
   },

@@ -1,0 +1,10 @@
+/*
+ * Placeholder for your organization's theme presets.
+ *
+ * To add a preset without editing shared files, create config/theme.css. It is
+ * loaded instead of this file. Put your preset there, or import it:
+ *
+ *   @import '../src/theme/your-name.css';
+ *
+ * Then set theme.preset to its name in config/devrel.config.ts.
+ */

@@ -70,14 +70,20 @@ export const configSchema = z.strictObject({
 
   theme: z
     .strictObject({
-      /** Name of a theme preset. */
+      /** Name of a theme preset: 'default', or one you added (see src/theme/default.css). */
       preset: text.default('default'),
-      /** Font family names. */
+      /** Font family names. Anything left out uses the system font. */
       fonts: z
         .strictObject({
-          heading: text.default('Inter'),
-          body: text.default('Inter'),
-          mono: text.default('JetBrains Mono'),
+          heading: text.optional(),
+          body: text.optional(),
+          mono: text.optional(),
+          /**
+           * Stylesheets that load the fonts named above: full URLs (e.g. a
+           * Google Fonts link) or paths under public/ (e.g. /fonts/fonts.css).
+           * Not needed for fonts already installed on your viewers' devices.
+           */
+          stylesheets: list,
         })
         .prefault({}),
     })
