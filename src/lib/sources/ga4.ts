@@ -30,7 +30,7 @@ const ga4: Source = {
     { name: 'GA4_PROPERTY_ID', required: true, help: 'Numeric GA4 property ID (Admin > Property details)' },
     { name: 'GOOGLE_APPLICATION_CREDENTIALS', required: true, help: 'Path to the service account JSON key, e.g. ./secrets/ga4-service-account.json' },
     { name: 'GA4_BLOG_PATH_PREFIX', required: false, help: 'Limit the top-pages report to blog posts, e.g. /blog/' },
-    { name: 'GA4_KEY_EVENTS', required: false, help: 'Comma-separated key event names to report, e.g. product_click,demo_request,cli_install_click' },
+    { name: 'GA4_KEY_EVENTS', required: false, help: 'Comma-separated key event names to report, e.g. product_click,demo_request,install_click' },
   ],
   async collect() {
     const { BetaAnalyticsDataClient } = await import('@google-analytics/data');

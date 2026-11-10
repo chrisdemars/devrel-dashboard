@@ -51,7 +51,7 @@ test/               Unit tests
 | Social | YouTube | Data API key and channel IDs |
 | Social | Metricool | Credentials are read, but the connector is still a stub |
 | Social | Facebook | Placeholder, or the manual `facebook-export.csv` |
-| Business | CRM, CLI telemetry, portal sign-ups | Placeholders until access is granted |
+| Business | CRM, product usage, product sign-ups | Placeholders until access is granted |
 | Manual | Followers, conferences, content multiplier, sales-flagged deals, cross-team work, declined requests | CSV logs |
 
 Each source reports one of these statuses: `ok`, `not_configured` (lists what's missing), `placeholder` (no data feed yet), or `error`.

@@ -18,27 +18,27 @@ export const crm: Source = {
   ],
 };
 
-export const cliTelemetry: Source = {
-  id: 'cli-telemetry',
-  name: 'CLI usage: activation and active users',
+export const productTelemetry: Source = {
+  id: 'product-telemetry',
+  name: 'Product usage: activation and active users',
   category: 'business',
-  placeholder: 'Waiting on product: opt-in telemetry for first use (activation) and weekly active users.',
+  placeholder: 'Waiting on product: opt-in usage data for first use (activation) and weekly active users.',
   env: [
-    { name: 'CLI_TELEMETRY_API_URL', help: 'Endpoint or export the product team provides' },
-    { name: 'CLI_TELEMETRY_API_TOKEN', help: 'Read-only token' },
+    { name: 'PRODUCT_TELEMETRY_API_URL', help: 'Endpoint or export the product team provides' },
+    { name: 'PRODUCT_TELEMETRY_API_TOKEN', help: 'Read-only token' },
   ],
 };
 
-export const portal: Source = {
-  id: 'portal',
-  name: 'Portal sign-ups and "How did you hear about us?"',
+export const productSignups: Source = {
+  id: 'product-signups',
+  name: 'Product sign-ups and "How did you hear about us?"',
   category: 'business',
-  placeholder: 'Waiting on product: portal sign-up analytics and the "How did you hear about us?" field.',
+  placeholder: 'Waiting on product: sign-up analytics and the "How did you hear about us?" field.',
   env: [
-    { name: 'PORTAL_ANALYTICS_API_URL', help: 'Endpoint or export the product team provides' },
-    { name: 'PORTAL_ANALYTICS_API_TOKEN', help: 'Read-only token' },
+    { name: 'PRODUCT_SIGNUPS_API_URL', help: 'Endpoint or export the product team provides' },
+    { name: 'PRODUCT_SIGNUPS_API_TOKEN', help: 'Read-only token' },
   ],
 };
 
-const business: Source[] = [crm, cliTelemetry, portal];
+const business: Source[] = [crm, productTelemetry, productSignups];
 export default business;
