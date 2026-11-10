@@ -3,24 +3,34 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { parseCsv, num, sum } from '../lib/csv.js';
-import { STATUS } from '../lib/source.js';
+import { num, parseCsv, sum, type CsvRow } from '../csv';
+import { STATUS, type Source, type SourceCategory } from './core';
 
-export const MANUAL_DIR = process.env.MANUAL_DATA_DIR ?? 'data/manual';
+export function manualDir(): string {
+  return process.env.MANUAL_DATA_DIR ?? 'data/manual';
+}
 
-function manualLog({ id, name, category, file, summarize }) {
+interface ManualLog {
+  id: string;
+  name: string;
+  category: SourceCategory;
+  file: string;
+  summarize: (rows: CsvRow[]) => Record<string, unknown>;
+}
+
+function manualLog({ id, name, category, file, summarize }: ManualLog): Source {
   return {
     id,
     name,
     category,
     file,
     async collect() {
-      const path = join(MANUAL_DIR, file);
-      let text;
+      const path = join(manualDir(), file);
+      let text: string;
       try {
         text = await readFile(path, 'utf8');
       } catch (err) {
-        if (err.code !== 'ENOENT') throw err;
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
         return {
           status: STATUS.NOT_CONFIGURED,
           missing: [path],
@@ -33,24 +43,36 @@ function manualLog({ id, name, category, file, summarize }) {
   };
 }
 
-const latestBy = (rows, keyFn) => {
-  const latest = {};
+function latestBy(rows: CsvRow[], keyFn: (r: CsvRow) => string): Record<string, CsvRow> {
+  const latest: Record<string, CsvRow> = {};
   for (const r of rows) {
     const key = keyFn(r);
     if (!latest[key] || r.date > latest[key].date) latest[key] = r;
   }
   return latest;
-};
+}
 
-export default [
+function countBy(rows: CsvRow[], column: string): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const r of rows) counts[r[column]] = (counts[r[column]] ?? 0) + 1;
+  return counts;
+}
+
+const REACH_COLUMNS = ['blog_sessions', 'short_views', 'stream_live_viewers', 'stream_replay_views', 'social_impressions'];
+
+const manual: Source[] = [
   manualLog({
     id: 'follower-counts',
     name: 'Follower and subscriber counts (manual baseline)',
     category: 'social',
     file: 'follower-counts.csv',
     summarize: (rows) => ({
-      latest: Object.fromEntries(Object.entries(latestBy(rows, (r) => `${r.platform}:${r.account}`))
-        .map(([k, r]) => [k, { date: r.date, followers: num(r.followers) }])),
+      latest: Object.fromEntries(
+        Object.entries(latestBy(rows, (r) => `${r.platform}:${r.account}`)).map(([k, r]) => [
+          k,
+          { date: r.date, followers: num(r.followers) },
+        ]),
+      ),
     }),
   }),
   manualLog({
@@ -80,12 +102,11 @@ export default [
     category: 'content',
     file: 'content-multiplier.csv',
     summarize: (rows) => {
-      const reachCols = ['blog_sessions', 'short_views', 'stream_live_viewers', 'stream_replay_views', 'social_impressions'];
       const perPost = rows.map((r) => ({
         title: r.blog_title,
         date: r.publish_date,
-        totalReach: reachCols.reduce((t, c) => t + num(r[c]), 0),
-        formats: reachCols.filter((c) => num(r[c]) > 0).length,
+        totalReach: REACH_COLUMNS.reduce((t, c) => t + num(r[c]), 0),
+        formats: REACH_COLUMNS.filter((c) => num(r[c]) > 0).length,
       }));
       return {
         posts: rows.length,
@@ -114,8 +135,12 @@ export default [
     category: 'cli',
     file: 'other-package-installs.csv',
     summarize: (rows) => ({
-      latest: Object.fromEntries(Object.entries(latestBy(rows, (r) => `${r.package_manager}:${r.package}`))
-        .map(([k, r]) => [k, { date: r.date, period: r.period, installs: num(r.installs) }])),
+      latest: Object.fromEntries(
+        Object.entries(latestBy(rows, (r) => `${r.package_manager}:${r.package}`)).map(([k, r]) => [
+          k,
+          { date: r.date, period: r.period, installs: num(r.installs) },
+        ]),
+      ),
     }),
   }),
   manualLog({
@@ -123,17 +148,15 @@ export default [
     name: 'Cross-team contributions (docs, engineering, ...)',
     category: 'capacity',
     file: 'cross-team-contributions.csv',
-    summarize: (rows) => ({
-      byTeam: rows.reduce((acc, r) => ({ ...acc, [r.team]: (acc[r.team] ?? 0) + 1 }), {}),
-    }),
+    summarize: (rows) => ({ byTeam: countBy(rows, 'team') }),
   }),
   manualLog({
     id: 'declined-requests',
     name: 'Demand we could not meet (declined talks, unwritten content)',
     category: 'capacity',
     file: 'declined-requests.csv',
-    summarize: (rows) => ({
-      byType: rows.reduce((acc, r) => ({ ...acc, [r.type]: (acc[r.type] ?? 0) + 1 }), {}),
-    }),
+    summarize: (rows) => ({ byType: countBy(rows, 'type') }),
   }),
 ];
+
+export default manual;

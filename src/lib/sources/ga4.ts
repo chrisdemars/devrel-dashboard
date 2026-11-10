@@ -1,23 +1,28 @@
 // Google Analytics 4: blog and site traffic, plus key events
 // (e.g. product page clicks, demo requests, install page visits).
 //
-// Setup (once you're logged in to GA4):
+// Setup:
 //   1. Google Cloud console: enable the "Google Analytics Data API" and create
 //      a service account. Download its JSON key into ./secrets/ (gitignored).
 //   2. GA4 > Admin > Property access management: add the service account's
 //      email as a Viewer.
 //   3. GA4 > Admin > Property details: copy the numeric Property ID.
 
-import { env, envList, lookbackDays } from '../lib/source.js';
+import type { protos } from '@google-analytics/data';
+import { env, envList, lookbackDays, type Source } from './core';
 
-function rowsToObjects(response, dims, mets) {
+type ReportRequest = protos.google.analytics.data.v1beta.IRunReportRequest;
+type ReportResponse = protos.google.analytics.data.v1beta.IRunReportResponse;
+type Filter = protos.google.analytics.data.v1beta.IFilter;
+
+function rowsToObjects(response: ReportResponse, dims: string[], mets: string[]) {
   return (response.rows ?? []).map((row) => ({
-    ...Object.fromEntries(dims.map((d, i) => [d, row.dimensionValues[i].value])),
-    ...Object.fromEntries(mets.map((m, i) => [m, Number(row.metricValues[i].value)])),
+    ...Object.fromEntries(dims.map((d, i) => [d, row.dimensionValues?.[i]?.value ?? ''])),
+    ...Object.fromEntries(mets.map((m, i) => [m, Number(row.metricValues?.[i]?.value ?? 0)])),
   }));
 }
 
-export default {
+const ga4: Source = {
   id: 'ga4',
   name: 'Google Analytics 4 (blog and site)',
   category: 'web',
@@ -34,17 +39,18 @@ export default {
     const days = lookbackDays();
     const dateRanges = [{ startDate: `${days}daysAgo`, endDate: 'yesterday' }];
 
-    const report = async ({ dims, mets, filter, limit, orderBy }) => {
-      const [res] = await client.runReport({
+    const report = async (opts: { dims: string[]; mets: string[]; filter?: Filter; limit?: number; orderBy?: string }) => {
+      const request: ReportRequest = {
         property,
         dateRanges,
-        dimensions: dims.map((name) => ({ name })),
-        metrics: mets.map((name) => ({ name })),
-        ...(filter && { dimensionFilter: { filter } }),
-        ...(orderBy && { orderBys: [{ metric: { metricName: orderBy }, desc: true }] }),
-        ...(limit && { limit }),
-      });
-      return rowsToObjects(res, dims, mets);
+        dimensions: opts.dims.map((name) => ({ name })),
+        metrics: opts.mets.map((name) => ({ name })),
+        ...(opts.filter && { dimensionFilter: { filter: opts.filter } }),
+        ...(opts.orderBy && { orderBys: [{ metric: { metricName: opts.orderBy }, desc: true }] }),
+        ...(opts.limit && { limit: opts.limit }),
+      };
+      const [res] = await client.runReport(request);
+      return rowsToObjects(res, opts.dims, opts.mets);
     };
 
     const prefix = env('GA4_BLOG_PATH_PREFIX');
@@ -59,14 +65,14 @@ export default {
       report({
         dims: ['pagePath', 'pageTitle'],
         mets: ['screenPageViews', 'sessions', 'engagedSessions', 'keyEvents'],
-        filter: prefix && { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: prefix } },
+        filter: prefix ? { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: prefix } } : undefined,
         orderBy: 'screenPageViews',
         limit: 10,
       }),
       report({
         dims: ['eventName'],
         mets: ['keyEvents'],
-        filter: keyEvents.length && { fieldName: 'eventName', inListFilter: { values: keyEvents } },
+        filter: keyEvents.length ? { fieldName: 'eventName', inListFilter: { values: keyEvents } } : undefined,
         orderBy: 'keyEvents',
       }),
     ]);
@@ -78,3 +84,5 @@ export default {
     };
   },
 };
+
+export default ga4;

@@ -2,9 +2,11 @@
 // newlines inside quotes). Good enough for sheets exported from Google Sheets
 // or Excel; no dependency needed.
 
-export function parseCsv(text) {
-  const rows = [];
-  let row = [];
+export type CsvRow = Record<string, string>;
+
+export function parseCsv(text: string): CsvRow[] {
+  const rows: string[][] = [];
+  let row: string[] = [];
   let field = '';
   let inQuotes = false;
   const src = text.replace(/^﻿/, '');
@@ -12,32 +14,40 @@ export function parseCsv(text) {
   for (let i = 0; i < src.length; i++) {
     const c = src[i];
     if (inQuotes) {
-      if (c === '"' && src[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') inQuotes = false;
+      if (c === '"' && src[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (c === '"') inQuotes = false;
       else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n' || c === '\r') {
+    else if (c === ',') {
+      row.push(field);
+      field = '';
+    } else if (c === '\n' || c === '\r') {
       if (c === '\r' && src[i + 1] === '\n') i++;
-      row.push(field); rows.push(row); row = []; field = '';
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
     } else field += c;
   }
-  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  if (field !== '' || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
 
   const nonEmpty = rows.filter((r) => r.some((v) => v.trim() !== ''));
   if (!nonEmpty.length) return [];
   const header = nonEmpty[0].map((h) => h.trim());
-  return nonEmpty.slice(1).map((r) =>
-    Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])),
-  );
+  return nonEmpty.slice(1).map((r) => Object.fromEntries(header.map((h, i) => [h, (r[i] ?? '').trim()])));
 }
 
-// "$1,200" -> 1200, "" -> 0, "n/a" -> 0
-export function num(value) {
+/** "$1,200" -> 1200, "" -> 0, "n/a" -> 0 */
+export function num(value: unknown): number {
   const n = Number(String(value ?? '').replace(/[$,\s]/g, ''));
   return Number.isFinite(n) ? n : 0;
 }
 
-export function sum(rows, column) {
+export function sum(rows: CsvRow[], column: string): number {
   return rows.reduce((total, r) => total + num(r[column]), 0);
 }
