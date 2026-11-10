@@ -96,7 +96,7 @@ Tag every link you share, so traffic can be traced back to the channel and the e
 
 ```sh
 npm run utm -- --url https://example.com/blog/post --channel youtube --campaign cli-launch
-npm run utm -- --url https://example.com/cli --channel conference --event "DevConf 2026" --qr
+npm run utm -- --url https://example.com/cli --channel conference --event "ExampleConf 2026" --qr
 npm run utm -- --list      # the channels and their source and medium
 ```
 
@@ -118,13 +118,13 @@ Each channel has a fixed `utm_source` and `utm_medium`:
 | `facebook` | `facebook` | `social` | | Posts on Facebook |
 | `blog` | `blog` | `referral` | | Links from one of your blog posts to another page |
 | `newsletter` | `newsletter` | `email` | | Newsletters and other email |
-| `conference` | the `--event`, e.g. `devconf-2026` | `conference` | `slides`, or `qr` with `--qr` | Conference slides and the QR code on them |
+| `conference` | the `--event`, e.g. `exampleconf-2026` | `conference` | `slides`, or `qr` with `--qr` | Conference slides and the QR code on them |
 | `community` | the `--platform` (`discord` if not given) | `community` | | Discord, forums and other community spaces |
 
 The rules:
 - **Every value is lowercase ASCII with words joined by hyphens.** The command cleans up what you type: `"CLI Launch"` becomes `cli-launch`.
-- **`utm_campaign` is required.** It names what you're promoting (`cli-launch`) or the event (`devconf-2026`), and stays the same across channels so they can be compared.
-- **Each conference gets its own campaign**, built from the event name and year. `--event "DevConf" --date 2026-06-12` gives `devconf-2026`. Add `--campaign` to promote something else at the event; the event stays the source.
+- **`utm_campaign` is required.** It names what you're promoting (`cli-launch`) or the event (`exampleconf-2026`), and stays the same across channels so they can be compared.
+- **Each conference gets its own campaign**, built from the event name and year. `--event "ExampleConf" --date 2026-06-12` gives `exampleconf-2026`. Add `--campaign` to promote something else at the event; the event stays the source.
 - **`utm_content` and `utm_term` are optional** (`--content`, `--term`). Use content to tell two links in the same place apart, such as `description` and `pinned-comment`.
 - Other query parameters and the `#fragment` on the link are kept. Any `utm_*` parameters already on it are replaced. The order is always source, medium, campaign, content, term.
 

@@ -76,7 +76,7 @@ export interface UtmInput {
   term?: string;
   /** Livestream (required) and community (optional): where the link is posted. */
   platform?: string;
-  /** Conference: the event name, e.g. "DevConf". */
+  /** Conference: the event name, e.g. "ExampleConf". */
   event?: string;
   /** Conference: the event's year or date, e.g. 2026 or "2026-06-12". */
   date?: string | number;
@@ -124,7 +124,7 @@ function yearOf(date: string | number): string {
 
 /**
  * The campaign for a conference: the event name plus its year, e.g.
- * ("DevConf", "2026-06-12") gives "devconf-2026". The year is not added twice
+ * ("ExampleConf", "2026-06-12") gives "exampleconf-2026". The year is not added twice
  * when the name already has it.
  */
 export function conferenceCampaign(event: string, date?: string | number): string {

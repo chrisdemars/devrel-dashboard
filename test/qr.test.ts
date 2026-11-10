@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { qrSvg } from '../src/lib/qr';
 
-const LINK = 'https://example.com/cli?utm_source=devconf-2026&utm_medium=conference&utm_campaign=devconf-2026&utm_content=qr';
+const LINK = 'https://example.com/cli?utm_source=exampleconf-2026&utm_medium=conference&utm_campaign=exampleconf-2026&utm_content=qr';
 
 describe('qrSvg', () => {
   test('returns an SVG document', async () => {
@@ -14,7 +14,7 @@ describe('qrSvg', () => {
 
   test('is the same for the same link and different for another', async () => {
     expect(await qrSvg(LINK)).toBe(await qrSvg(LINK));
-    expect(await qrSvg(LINK)).not.toBe(await qrSvg(LINK.replace('devconf-2026', 'devconf-2027')));
+    expect(await qrSvg(LINK)).not.toBe(await qrSvg(LINK.replace('exampleconf-2026', 'exampleconf-2027')));
   });
 
   test('a higher error correction level changes the code', async () => {

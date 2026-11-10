@@ -1,6 +1,6 @@
 // Usage:
 //   npm run utm -- --url https://example.com/blog/post --channel youtube --campaign cli-launch
-//   npm run utm -- --url https://example.com/cli --channel conference --event "DevConf 2026" --qr
+//   npm run utm -- --url https://example.com/cli --channel conference --event "ExampleConf 2026" --qr
 //   npm run utm -- --list    show the channels and their source and medium
 
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -16,7 +16,7 @@ const USAGE = `Usage: npm run utm -- --url <link> --channel <channel> --campaign
   --url <link>        The link to tag (http or https)
   --channel <id>      Where the link will be shared (see --list)
   --campaign <name>   What the link promotes, e.g. cli-launch
-  --event <name>      Conference: the event, e.g. "DevConf 2026". Also the campaign unless --campaign is set
+  --event <name>      Conference: the event, e.g. "ExampleConf 2026". Also the campaign unless --campaign is set
   --date <date>       Conference: the event's year or date, added to the event when the name has no year
   --platform <name>   Livestream: youtube, twitch, linkedin, x or facebook. Community: discord, forum, ...
   --content <text>    Optional utm_content, to tell two links in the same place apart
@@ -28,7 +28,7 @@ const USAGE = `Usage: npm run utm -- --url <link> --channel <channel> --campaign
 
 Examples:
   npm run utm -- --url https://example.com/blog/post --channel youtube --campaign cli-launch
-  npm run utm -- --url https://example.com/cli --channel conference --event "DevConf 2026" --qr`;
+  npm run utm -- --url https://example.com/cli --channel conference --event "ExampleConf 2026" --qr`;
 
 /** Stops with a plain message instead of a stack trace. */
 function fail(message: string): never {
@@ -80,7 +80,7 @@ async function main() {
 
   const channel = args.channel.trim().toLowerCase();
   const isConference = channel === 'conference';
-  if (isConference && !args.event) fail('Missing --event: the conference name, e.g. --event "DevConf 2026".');
+  if (isConference && !args.event) fail('Missing --event: the conference name, e.g. --event "ExampleConf 2026".');
   if (!isConference && !args.campaign) fail('Missing --campaign: what the link promotes, e.g. --campaign cli-launch.');
 
   const wantsQr = Boolean(args.qr || args.out);

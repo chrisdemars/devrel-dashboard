@@ -14,7 +14,7 @@ const BASE = 'https://example.com/blog/post';
 describe('slugify', () => {
   test('lowercases and joins words with hyphens', () => {
     expect(slugify('CLI Launch')).toBe('cli-launch');
-    expect(slugify('DevConf 2026')).toBe('devconf-2026');
+    expect(slugify('ExampleConf 2026')).toBe('exampleconf-2026');
   });
 
   test('turns accented and special letters into plain ASCII', () => {
@@ -50,7 +50,7 @@ describe('the channel table', () => {
     facebook: { source: 'facebook', medium: 'social' },
     blog: { source: 'blog', medium: 'referral' },
     newsletter: { source: 'newsletter', medium: 'email' },
-    conference: { source: 'devconf-2026', medium: 'conference', content: 'slides', extra: { event: 'DevConf 2026' } },
+    conference: { source: 'exampleconf-2026', medium: 'conference', content: 'slides', extra: { event: 'ExampleConf 2026' } },
     community: { source: 'discord', medium: 'community' },
   };
 
@@ -144,24 +144,24 @@ describe('buildUtmParams', () => {
 
 describe('conference naming', () => {
   test('the campaign is the event name plus the year', () => {
-    expect(conferenceCampaign('DevConf', 2026)).toBe('devconf-2026');
-    expect(conferenceCampaign('DevConf', '2026')).toBe('devconf-2026');
+    expect(conferenceCampaign('ExampleConf', 2026)).toBe('exampleconf-2026');
+    expect(conferenceCampaign('ExampleConf', '2026')).toBe('exampleconf-2026');
     expect(conferenceCampaign('Dev Conf Europe', '2026-06-12')).toBe('dev-conf-europe-2026');
-    expect(conferenceCampaign('DevConf', '2026-06')).toBe('devconf-2026');
+    expect(conferenceCampaign('ExampleConf', '2026-06')).toBe('exampleconf-2026');
   });
 
   test('the year is not added twice', () => {
-    expect(conferenceCampaign('DevConf 2026', '2026-06-12')).toBe('devconf-2026');
-    expect(conferenceCampaign('DevConf 2026 Europe', 2026)).toBe('devconf-2026-europe');
+    expect(conferenceCampaign('ExampleConf 2026', '2026-06-12')).toBe('exampleconf-2026');
+    expect(conferenceCampaign('ExampleConf 2026 Europe', 2026)).toBe('exampleconf-2026-europe');
   });
 
   test('without a date the event name is used as is', () => {
-    expect(conferenceCampaign('DevConf')).toBe('devconf');
-    expect(conferenceCampaign('DevConf 2026')).toBe('devconf-2026');
+    expect(conferenceCampaign('ExampleConf')).toBe('exampleconf');
+    expect(conferenceCampaign('ExampleConf 2026')).toBe('exampleconf-2026');
   });
 
   test('a bad date or an empty event name is an error', () => {
-    expect(() => conferenceCampaign('DevConf', 'June 2026')).toThrow(
+    expect(() => conferenceCampaign('ExampleConf', 'June 2026')).toThrow(
       'The date "June 2026" must be a year or a date, like 2026 or 2026-06-12.',
     );
     expect(() => conferenceCampaign('')).toThrow('The event name is required.');
@@ -169,18 +169,18 @@ describe('conference naming', () => {
   });
 
   test('the event is both the source and the campaign', () => {
-    expect(buildUtmParams({ channel: 'conference', event: 'DevConf', date: '2026-06-12' })).toEqual({
-      source: 'devconf-2026',
+    expect(buildUtmParams({ channel: 'conference', event: 'ExampleConf', date: '2026-06-12' })).toEqual({
+      source: 'exampleconf-2026',
       medium: 'conference',
-      campaign: 'devconf-2026',
+      campaign: 'exampleconf-2026',
       content: 'slides',
     });
   });
 
   test('a campaign can be set separately from the event', () => {
     expect(
-      buildUtmParams({ channel: 'conference', event: 'DevConf 2026', campaign: 'CLI Launch', content: 'qr' }),
-    ).toEqual({ source: 'devconf-2026', medium: 'conference', campaign: 'cli-launch', content: 'qr' });
+      buildUtmParams({ channel: 'conference', event: 'ExampleConf 2026', campaign: 'CLI Launch', content: 'qr' }),
+    ).toEqual({ source: 'exampleconf-2026', medium: 'conference', campaign: 'cli-launch', content: 'qr' });
   });
 
   test('a conference needs an event', () => {
@@ -230,8 +230,8 @@ describe('buildUtmUrl', () => {
   });
 
   test('tags a conference link', () => {
-    expect(buildUtmUrl({ url: 'https://example.com/cli', channel: 'conference', event: 'DevConf 2026', content: 'qr' })).toBe(
-      'https://example.com/cli?utm_source=devconf-2026&utm_medium=conference&utm_campaign=devconf-2026&utm_content=qr',
+    expect(buildUtmUrl({ url: 'https://example.com/cli', channel: 'conference', event: 'ExampleConf 2026', content: 'qr' })).toBe(
+      'https://example.com/cli?utm_source=exampleconf-2026&utm_medium=conference&utm_campaign=exampleconf-2026&utm_content=qr',
     );
   });
 
