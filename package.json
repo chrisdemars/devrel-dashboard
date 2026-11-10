@@ -17,7 +17,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "status": "node --env-file-if-exists=.env --import tsx scripts/collect.ts status",
-    "collect": "node --env-file-if-exists=.env --import tsx scripts/collect.ts collect"
+    "collect": "node --env-file-if-exists=.env --import tsx scripts/collect.ts collect",
+    "sample-data": "node --env-file-if-exists=.env --import tsx scripts/sample-data.ts"
   },
   "dependencies": {
     "@google-analytics/data": "^7.3.0",

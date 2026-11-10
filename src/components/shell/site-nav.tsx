@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { APP_NAME } from '@/lib/app';
 import config from '@/lib/config';
+import { dataMode } from '@/lib/data/mode';
 import { NAV_PAGES } from '@/lib/nav';
 import { NavLinks } from './nav-links';
 import { ThemeToggle } from './theme-toggle';
@@ -27,7 +28,17 @@ export function SiteNav() {
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-page/90 backdrop-blur print:hidden">
       <div className="mx-auto flex h-12 w-full max-w-shell items-center justify-between gap-4 px-4">
-        <Brand />
+        <div className="flex min-w-0 items-center gap-3">
+          <Brand />
+          {dataMode() === 'sample' && (
+            <span
+              title="These numbers are generated for a fictional organization. They are not real."
+              className="rounded-full border border-line px-2.5 py-1 font-mono text-[0.65rem] tracking-[0.14em] whitespace-nowrap text-warning uppercase"
+            >
+              Sample data
+            </span>
+          )}
+        </div>
         <ThemeToggle />
       </div>
       {/* The links get their own row: nine labels, which an organization can rename, do not fit beside the brand. */}

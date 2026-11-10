@@ -34,6 +34,7 @@ cp .env.example .env                                                   # keys an
 | `npm run build` / `npm start` | Production build and server |
 | `npm run status` | Show every data source and what it still needs (no network calls) |
 | `npm run collect` | Pull every configured source and write `data/snapshots/<date>.json` |
+| `npm run sample-data` | Write the generated sample data to `data/sample/sample-data.json`, to look at it |
 | `npm test` | Unit tests (Vitest) |
 | `npm run lint` / `npm run typecheck` | ESLint and TypeScript checks |
 
@@ -75,6 +76,18 @@ Invalid DevRel config. Fix config/devrel.config.ts (or devrel.config.example.ts 
 
 Secrets never go in the config; they stay in `.env`. The package and key event variables in `.env` (`CLI_NPM_PACKAGES`, `GA4_KEY_EVENTS` and so on) still work, and replace the matching config list when set.
 
+## Data and sample data
+Pages read everything through one interface, `DataStore` in `src/lib/data/types.ts`, so they never know where the data lives. `DATA_MODE` picks the implementation:
+
+| `DATA_MODE` | What you get |
+|---|---|
+| `sample` (default) | Generated data for a fictional organization. No setup, and a "Sample data" badge in the navigation |
+| `supabase` | Your own data in your own Supabase project. Not available yet |
+
+The sample data covers seven months around the launch date in your config (four before, three after): a blog post every two weeks with the short, livestream and social posts made from it, conference talks with costs and leads, installs that ramp up after launch, site traffic and key events, followers, deals, cross-team work, declined requests, targets and report notes. It uses your config's tags and key event names.
+
+It is generated from a fixed seed, so it is identical on every run and on every machine. Nothing in it is real. The dashboards treat the last day of the sample data as "today".
+
 ## Theme
 The dashboard is dark by default, with a light theme behind the toggle in the navigation. Printing always uses the light theme. Open `/styleguide` to see every color token and building block in both themes.
 
@@ -113,9 +126,11 @@ src/components/ui/         Building blocks: Card, KpiTile, Headline, StatusPill 
 src/components/shell/      Navigation and theme toggle
 src/theme/                 Color tokens: the default preset and the dark, light and print mapping
 src/lib/config/            Config schema, defaults and validation
+src/lib/data/              Data types, the DataStore interface and the sample data generator
 src/lib/sources/           Data source connectors (one Source object each)
 src/lib/csv.ts             CSV reader for the manual logs
 scripts/collect.ts         The status and collect commands
+scripts/sample-data.ts     The sample-data command
 templates/                 Header-only CSV templates for manual logs
 test/                      Unit tests
 ```
