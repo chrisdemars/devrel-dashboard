@@ -3,7 +3,7 @@
 
 An open-source dashboard for tracking Developer Relations activity and showing its impact: reach, product adoption, pipeline and cost per outcome.
 
-> **Status:** early. The data collector works today; the dashboard UI is in progress.
+> **Status:** early. The data collector and the design system work today; the dashboards are in progress.
 
 Built with Next.js 16, TypeScript and Tailwind CSS 4.
 
@@ -57,8 +57,8 @@ export default defineConfig({
 
 | Setting | What it controls | Default |
 |---|---|---|
-| `org.name`, `org.url`, `org.logo` | Name, link and logo shown in the app and the report | `name` is required |
-| `theme.preset`, `theme.fonts` | Theme preset and the heading, body and monospace fonts | `default`; Inter and JetBrains Mono |
+| `org.name`, `org.url`, `org.logo` | Your organization's name and link, used in the report, and an optional logo for the navigation | `name` is required |
+| `theme.preset`, `theme.fonts` | Theme preset, and the heading, body and monospace fonts. See [Theme](#theme) | `default`; system fonts |
 | `sources.enabled` | `'all'`, or a list of source ids to show and collect | `'all'` |
 | `packages.*` | npm, Homebrew, PyPI, Docker Hub and GitHub names to track | none |
 | `ga4.keyEvents` | GA4 key events to report | every key event |
@@ -78,10 +78,43 @@ Invalid DevRel config. Fix config/devrel.config.ts (or devrel.config.example.ts 
 
 Secrets never go in the config; they stay in `.env`. The package and key event variables in `.env` (`CLI_NPM_PACKAGES`, `GA4_KEY_EVENTS` and so on) still work, and replace the matching config list when set.
 
+## Theme
+The dashboard is dark by default, with a light theme behind the toggle in the navigation. Printing always uses the light theme. Open `/styleguide` to see every color token and building block in both themes.
+
+**Colors.** All colors are tokens in one file, `src/theme/default.css`: a dark and a light value for each of the page, surfaces, text, accent, states and eight chart colors. To use your own colors without editing shared files:
+
+1. Copy `src/theme/default.css` to a new file, such as `src/theme/acme.css`. Change the selector to `[data-preset='acme']` and edit the values.
+2. Create `config/theme.css` containing `@import '../src/theme/acme.css';`.
+3. Set `theme: { preset: 'acme' }` in `config/devrel.config.ts`.
+
+`npm test` then checks your preset: it must define every token, text must meet WCAG AA contrast (4.5:1) on every surface, and chart colors must reach 3:1 on cards. The styleguide shows your preset next to the default.
+
+The eight chart colors are a set. Their order keeps neighboring series distinguishable for color-blind readers, so change them together.
+
+**Fonts.** System fonts are used unless you name your own. Give the family names and a stylesheet that loads them, either a full URL or a file under `public/`:
+
+```ts
+theme: {
+  fonts: {
+    heading: 'Inter',
+    body: 'Inter',
+    mono: 'JetBrains Mono',
+    stylesheets: ['https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap'],
+  },
+},
+```
+
+A stylesheet URL on another site, such as Google Fonts, is requested by each viewer's browser. Host the fonts under `public/` if you'd rather avoid that.
+
+**Logo.** Optional. Put the file under `public/` and set `org.logo` to `{ src: '/logo.svg', alt: 'Acme' }`. It appears beside the app name in the navigation.
+
 ## Project layout
 ```
 devrel.config.example.ts   Example org config (copy to config/devrel.config.ts)
 src/app/                   Next.js App Router pages
+src/components/ui/         Building blocks: Card, KpiTile, Headline, StatusPill and more
+src/components/shell/      Navigation and theme toggle
+src/theme/                 Color tokens: the default preset and the dark, light and print mapping
 src/lib/config/            Config schema, defaults and validation
 src/lib/sources/           Data source connectors (one Source object each)
 src/lib/csv.ts             CSV reader for the manual logs

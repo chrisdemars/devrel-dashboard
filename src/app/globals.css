@@ -1,25 +1,74 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import '../theme/default.css';
+@import '../theme/tokens.css';
 
-/* Placeholder tokens. The real design system (themes, brand presets) lands in #2. */
+/* Variants that follow the theme toggle, e.g. `light:hidden`. */
+@custom-variant light (&:where([data-theme='light'], [data-theme='light'] *));
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Font stacks. The root layout overrides --ff-* with the fonts from the org config. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ff-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ff-heading: var(--ff-body);
+  --ff-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Tailwind utilities for the tokens: bg-surface, text-muted, border-line, fill-chart-1 ... */
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-from: var(--accent-from);
+  --color-accent-to: var(--accent-to);
+  --color-on-accent: var(--on-accent);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --color-neutral: var(--neutral);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+
+  --font-sans: var(--ff-body);
+  --font-heading: var(--ff-heading);
+  --font-mono: var(--ff-mono);
+
+  --radius-card: 8px;
+  --container-shell: 75rem;
+}
+
+@layer base {
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--ff-body);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--ff-heading);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: ui-sans-serif, system-ui, sans-serif;
+@media print {
+  /* Print backgrounds and colors as designed instead of the browser's ink-saving defaults. */
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

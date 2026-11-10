@@ -1,0 +1,64 @@
+/*
+ * The default theme preset: a neutral palette.
+ *
+ * A preset is a list of values and nothing else. Every token has a dark value
+ * (--dark-*) and a light value (--light-*), written as 6-digit hex so
+ * test/theme.test.ts can check contrast. tokens.css turns these into the
+ * tokens the app uses (--page, --ink, ...), following the active theme.
+ *
+ * To add your own preset, copy this file, change the selector to
+ * [data-preset='your-name'], import it from config/theme.css, and set
+ * theme.preset in config/devrel.config.ts.
+ *
+ * The chart colors are a set: their order keeps neighbors distinguishable for
+ * color-blind readers. Change them together, then re-check.
+ */
+
+:root,
+[data-preset='default'] {
+  --dark-page: #0d0d0c;        /* Page background */
+  --dark-surface: #1a1a19;     /* Cards and chart surfaces */
+  --dark-raised: #242422;      /* Hover, inset and nested surfaces */
+  --dark-line: #33332f;        /* Borders and dividers */
+  --dark-ink: #f0efec;         /* Main text */
+  --dark-muted: #a9a89f;       /* Secondary text and labels */
+  --dark-accent: #6da7ec;      /* Accent text: second headline line, links, focus */
+  --dark-accent-from: #256abf; /* Accent fill, gradient start */
+  --dark-accent-to: #184f95;   /* Accent fill, gradient end */
+  --dark-on-accent: #ffffff;   /* Text on the accent fill */
+  --dark-positive: #4cc38a;    /* Good change or state (text) */
+  --dark-negative: #f0787a;    /* Bad change or state (text) */
+  --dark-warning: #e5a93c;     /* Needs attention (text) */
+  --dark-neutral: #8f8e86;     /* No data yet (marks) */
+  --dark-chart-1: #3987e5;     /* Chart series, in this fixed order */
+  --dark-chart-2: #d95926;
+  --dark-chart-3: #199e70;
+  --dark-chart-4: #c98500;
+  --dark-chart-5: #d55181;
+  --dark-chart-6: #008300;
+  --dark-chart-7: #9085e9;
+  --dark-chart-8: #e66767;
+
+  --light-page: #f5f4f1;       /* Page background */
+  --light-surface: #fcfcfb;    /* Cards and chart surfaces */
+  --light-raised: #efeeea;     /* Hover, inset and nested surfaces */
+  --light-line: #d9d8d2;       /* Borders and dividers */
+  --light-ink: #0b0b0b;        /* Main text */
+  --light-muted: #52514e;      /* Secondary text and labels */
+  --light-accent: #1c5cab;     /* Accent text: second headline line, links, focus */
+  --light-accent-from: #256abf; /* Accent fill, gradient start */
+  --light-accent-to: #184f95;  /* Accent fill, gradient end */
+  --light-on-accent: #ffffff;  /* Text on the accent fill */
+  --light-positive: #006300;   /* Good change or state (text) */
+  --light-negative: #b42525;   /* Bad change or state (text) */
+  --light-warning: #8a5a00;    /* Needs attention (text) */
+  --light-neutral: #77766f;    /* No data yet (marks) */
+  --light-chart-1: #2a78d6;    /* Chart series, in this fixed order */
+  --light-chart-2: #e0562a;
+  --light-chart-3: #0f9488;
+  --light-chart-4: #b07800;
+  --light-chart-5: #d55181;
+  --light-chart-6: #008300;
+  --light-chart-7: #6250d6;
+  --light-chart-8: #e34948;
+}

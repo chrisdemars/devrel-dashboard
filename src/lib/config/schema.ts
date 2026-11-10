@@ -56,7 +56,7 @@ const pageLabels = Object.fromEntries(
 
 export const configSchema = z.strictObject({
   org: z.strictObject({
-    /** Shown in the navigation, page titles and the report cover. */
+    /** Your organization's name, used in the report. */
     name: text,
     url: z.url('must be a full URL, e.g. https://example.com').optional(),
     logo: z
@@ -70,14 +70,20 @@ export const configSchema = z.strictObject({
 
   theme: z
     .strictObject({
-      /** Name of a theme preset. */
+      /** Name of a theme preset: 'default', or one you added (see src/theme/default.css). */
       preset: text.default('default'),
-      /** Font family names. */
+      /** Font family names. Anything left out uses the system font. */
       fonts: z
         .strictObject({
-          heading: text.default('Inter'),
-          body: text.default('Inter'),
-          mono: text.default('JetBrains Mono'),
+          heading: text.optional(),
+          body: text.optional(),
+          mono: text.optional(),
+          /**
+           * Stylesheets that load the fonts named above: full URLs (e.g. a
+           * Google Fonts link) or paths under public/ (e.g. /fonts/fonts.css).
+           * Not needed for fonts already installed on your viewers' devices.
+           */
+          stylesheets: list,
         })
         .prefault({}),
     })

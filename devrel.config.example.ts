@@ -16,8 +16,15 @@ export default defineConfig({
   },
 
   theme: {
+    // 'default', or a preset you added (see src/theme/default.css).
     preset: 'default',
-    fonts: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' },
+    // Fonts are optional; the system font is used for anything left out.
+    // fonts: {
+    //   heading: 'Inter',
+    //   body: 'Inter',
+    //   mono: 'JetBrains Mono',
+    //   stylesheets: ['https://fonts.googleapis.com/css2?family=Inter:wght@400..700&family=JetBrains+Mono:wght@400..700&display=swap'],
+    // },
   },
 
   sources: {

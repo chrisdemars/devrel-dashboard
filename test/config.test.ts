@@ -26,7 +26,7 @@ describe('parseConfig', () => {
   test('only org.name is required; everything else gets a default', () => {
     const config = parseConfig({ org: { name: 'Acme' } });
     expect(config).toMatchObject({
-      theme: { preset: 'default', fonts: { heading: 'Inter', body: 'Inter', mono: 'JetBrains Mono' } },
+      theme: { preset: 'default', fonts: { stylesheets: [] } },
       sources: { enabled: 'all' },
       packages: { npm: [], homebrewFormulae: [], homebrewCasks: [], pypi: [], docker: [], github: [] },
       ga4: { keyEvents: [] },
@@ -42,7 +42,7 @@ describe('parseConfig', () => {
       theme: { fonts: { heading: 'Lora' } },
       pages: { launch: 'CLI launch' },
     });
-    expect(config.theme).toEqual({ preset: 'default', fonts: { heading: 'Lora', body: 'Inter', mono: 'JetBrains Mono' } });
+    expect(config.theme).toEqual({ preset: 'default', fonts: { heading: 'Lora', stylesheets: [] } });
     expect(config.pages).toEqual({ ...PAGE_LABELS, launch: 'CLI launch' });
   });
 
