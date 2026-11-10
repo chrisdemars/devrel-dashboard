@@ -8,7 +8,7 @@ node_modules/
 secrets/
 
 # Collected metrics and manual logs (may contain lead and deal details)
-data/
+/data/
 
 # OS and local tool files
 .DS_Store
