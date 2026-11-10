@@ -13,3 +13,13 @@ data/
 # OS and local tool files
 .DS_Store
 CLAUDE.local.md
+
+# Next.js and TypeScript build output
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# Test coverage
+coverage/
