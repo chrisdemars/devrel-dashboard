@@ -1,4 +1,6 @@
 # devrel-dashboard
+[![CI](https://github.com/chrisdemars/devrel-dashboard/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chrisdemars/devrel-dashboard/actions/workflows/ci.yml)
+
 An open-source dashboard for tracking Developer Relations activity and showing its impact: reach, product adoption, pipeline and cost per outcome.
 
 > **Status:** early. The data collector works today; the dashboard UI is in progress.
@@ -153,6 +155,9 @@ Write a `Source` object (the type and statuses are in `src/lib/sources/core.ts`)
 
 ## What stays local
 `.env`, `secrets/` (service account keys) and `data/` (snapshots and manual logs, which can include lead and deal details) are gitignored. Back up `data/`, because the snapshots are your baselines.
+
+## Contributing
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the checks to run, and follow the [code of conduct](CODE_OF_CONDUCT.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 [MIT](LICENSE)

@@ -1,0 +1,73 @@
+name: New data source
+description: Ask for a connector to a new data source
+title: "Source: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A source is one `Source` object in `src/lib/sources/`. Do not paste API keys, tokens or real data here.
+  - type: input
+    id: service
+    attributes:
+      label: Service
+      description: The name of the service or platform, with a link.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - CLI distribution
+        - Web
+        - Social
+        - Business
+        - Events
+        - Content
+        - Capacity
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Metrics
+      description: The numbers the source should collect, and why they matter for DevRel.
+      placeholder: Downloads per day, stars, followers, views...
+    validations:
+      required: true
+  - type: input
+    id: api
+    attributes:
+      label: API documentation
+      description: A link to the API docs, if the service has an API.
+    validations:
+      required: false
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Access
+      description: How the data can be read.
+      options:
+        - Public API, no key
+        - API key or token
+        - OAuth or service account
+        - Export only (CSV)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Rate limits, cost, settings the source would need, or anything else.
+    validations:
+      required: false
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contributing
+      options:
+        - label: I can open a pull request for this.
+          required: false
