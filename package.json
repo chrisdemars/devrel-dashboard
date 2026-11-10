@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "status": "node --env-file-if-exists=.env --import tsx scripts/collect.ts status",
     "collect": "node --env-file-if-exists=.env --import tsx scripts/collect.ts collect",
+    "sample-data": "node --env-file-if-exists=.env --import tsx scripts/sample-data.ts",
     "utm": "node --env-file-if-exists=.env --import tsx scripts/utm.ts"
   },
   "dependencies": {
