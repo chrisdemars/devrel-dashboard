@@ -9,7 +9,7 @@
 //   3. GA4 > Admin > Property details: copy the numeric Property ID.
 
 import type { protos } from '@google-analytics/data';
-import { env, envList, lookbackDays, type Source } from './core';
+import { env, listSetting, lookbackDays, type Source } from './core';
 
 type ReportRequest = protos.google.analytics.data.v1beta.IRunReportRequest;
 type ReportResponse = protos.google.analytics.data.v1beta.IRunReportResponse;
@@ -30,7 +30,7 @@ const ga4: Source = {
     { name: 'GA4_PROPERTY_ID', required: true, help: 'Numeric GA4 property ID (Admin > Property details)' },
     { name: 'GOOGLE_APPLICATION_CREDENTIALS', required: true, help: 'Path to the service account JSON key, e.g. ./secrets/ga4-service-account.json' },
     { name: 'GA4_BLOG_PATH_PREFIX', required: false, help: 'Limit the top-pages report to blog posts, e.g. /blog/' },
-    { name: 'GA4_KEY_EVENTS', required: false, help: 'Comma-separated key event names to report, e.g. product_click,demo_request,install_click' },
+    { name: 'GA4_KEY_EVENTS', config: 'ga4.keyEvents', required: false, help: 'Key event names to report, e.g. product_click, demo_request, install_click' },
   ],
   async collect() {
     const { BetaAnalyticsDataClient } = await import('@google-analytics/data');
@@ -54,7 +54,7 @@ const ga4: Source = {
     };
 
     const prefix = env('GA4_BLOG_PATH_PREFIX');
-    const keyEvents = envList('GA4_KEY_EVENTS');
+    const keyEvents = listSetting(ga4, 'GA4_KEY_EVENTS');
 
     const [byChannel, topPages, events] = await Promise.all([
       report({
@@ -80,7 +80,7 @@ const ga4: Source = {
     return {
       period: { days },
       metrics: { byChannel, topPages, keyEvents: events },
-      ...(!keyEvents.length && { note: 'GA4_KEY_EVENTS not set: showing every event marked as a key event.' }),
+      ...(!keyEvents.length && { note: 'No key events listed (ga4.keyEvents in devrel.config.ts): showing every event marked as a key event.' }),
     };
   },
 };

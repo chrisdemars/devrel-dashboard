@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import config from '@/lib/config';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'DevRel Dashboard',
+  title: `${config.org.name} DevRel Dashboard`,
   description: 'Track DevRel activity and show its impact.',
 };
 
