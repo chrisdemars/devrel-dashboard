@@ -1,4 +1,6 @@
 # devrel-dashboard
+[![CI](https://github.com/chrisdemars/devrel-dashboard/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/chrisdemars/devrel-dashboard/actions/workflows/ci.yml)
+
 An open-source dashboard for tracking Developer Relations activity and showing its impact: reach, product adoption, pipeline and cost per outcome.
 
 > **Status:** early. The data collector and the design system work today; the dashboards are in progress.
@@ -35,6 +37,7 @@ cp .env.example .env                                                   # keys an
 | `npm run status` | Show every data source and what it still needs (no network calls) |
 | `npm run collect` | Pull every configured source and write `data/snapshots/<date>.json` |
 | `npm run sample-data` | Write the generated sample data to `data/sample/sample-data.json`, to look at it |
+| `npm run utm` | Tag a link with UTM parameters, and optionally make a QR code for it |
 | `npm test` | Unit tests (Vitest) |
 | `npm run lint` / `npm run typecheck` | ESLint and TypeScript checks |
 
@@ -129,11 +132,53 @@ src/lib/config/            Config schema, defaults and validation
 src/lib/data/              Data types, the DataStore interface and the sample data generator
 src/lib/sources/           Data source connectors (one Source object each)
 src/lib/csv.ts             CSV reader for the manual logs
+src/lib/utm.ts             UTM naming convention and link builder
+src/lib/qr.ts              QR codes as SVG
 scripts/collect.ts         The status and collect commands
 scripts/sample-data.ts     The sample-data command
+scripts/utm.ts             The utm command
 templates/                 Header-only CSV templates for manual logs
 test/                      Unit tests
 ```
+
+## UTM links and QR codes
+Tag every link you share, so traffic can be traced back to the channel and the event it came from. `npm run utm` builds the link for you and keeps the naming consistent:
+
+```sh
+npm run utm -- --url https://example.com/blog/post --channel youtube --campaign cli-launch
+npm run utm -- --url https://example.com/cli --channel conference --event "ExampleConf 2026" --qr
+npm run utm -- --list      # the channels and their source and medium
+```
+
+The first command prints:
+
+```
+https://example.com/blog/post?utm_source=youtube&utm_medium=video&utm_campaign=cli-launch
+```
+
+Each channel has a fixed `utm_source` and `utm_medium`:
+
+| Channel | `utm_source` | `utm_medium` | Default `utm_content` | Use it for |
+|---|---|---|---|---|
+| `youtube` | `youtube` | `video` | | Video descriptions and pinned comments |
+| `youtube-short` | `youtube` | `video` | `short` | Short-form video descriptions |
+| `livestream` | the `--platform`: `youtube`, `twitch`, `linkedin`, `x` or `facebook` | `livestream` | | Stream descriptions, overlays and chat |
+| `x` | `x` | `social` | | Posts on X |
+| `linkedin` | `linkedin` | `social` | | Posts on LinkedIn |
+| `facebook` | `facebook` | `social` | | Posts on Facebook |
+| `blog` | `blog` | `referral` | | Links from one of your blog posts to another page |
+| `newsletter` | `newsletter` | `email` | | Newsletters and other email |
+| `conference` | the `--event`, e.g. `exampleconf-2026` | `conference` | `slides`, or `qr` with `--qr` | Conference slides and the QR code on them |
+| `community` | the `--platform` (`discord` if not given) | `community` | | Discord, forums and other community spaces |
+
+The rules:
+- **Every value is lowercase ASCII with words joined by hyphens.** The command cleans up what you type: `"CLI Launch"` becomes `cli-launch`.
+- **`utm_campaign` is required.** It names what you're promoting (`cli-launch`) or the event (`exampleconf-2026`), and stays the same across channels so they can be compared.
+- **Each conference gets its own campaign**, built from the event name and year. `--event "ExampleConf" --date 2026-06-12` gives `exampleconf-2026`. Add `--campaign` to promote something else at the event; the event stays the source.
+- **`utm_content` and `utm_term` are optional** (`--content`, `--term`). Use content to tell two links in the same place apart, such as `description` and `pinned-comment`.
+- Other query parameters and the `#fragment` on the link are kept. Any `utm_*` parameters already on it are replaced. The order is always source, medium, campaign, content, term.
+
+With `--qr`, the QR code is written as an SVG file to `data/qr/<campaign>-<channel>.svg` (gitignored); `--out <path>` writes it somewhere else. Put it on the last slide of a talk. SVG stays sharp at any size.
 
 ## Sources
 
@@ -158,6 +203,9 @@ Write a `Source` object (the type and statuses are in `src/lib/sources/core.ts`)
 
 ## What stays local
 `.env`, `secrets/` (service account keys) and `data/` (snapshots and manual logs, which can include lead and deal details) are gitignored. Back up `data/`, because the snapshots are your baselines.
+
+## Contributing
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the checks to run, and follow the [code of conduct](CODE_OF_CONDUCT.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 [MIT](LICENSE)
