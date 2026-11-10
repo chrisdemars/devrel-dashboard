@@ -5,7 +5,17 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import sources, { manualDir, missingConfig, runSource, STATUS, type SourceResult } from '../src/lib/sources';
+import type { SourceResult } from '../src/lib/sources';
+
+// Loading the sources also loads and validates devrel.config.ts. Show a config
+// problem as a plain message instead of a stack trace.
+const { default: sources, manualDir, missingConfig, runSource, STATUS } = await import('../src/lib/sources').catch(
+  (err: unknown) => {
+    if (!(err instanceof Error) || err.name !== 'ConfigError') throw err;
+    console.error(err.message);
+    process.exit(1);
+  },
+);
 
 const ICON: Record<SourceResult['status'], string> = { ok: '✔', not_configured: '○', placeholder: '◌', error: '✖' };
 const SNAPSHOT_DIR = process.env.SNAPSHOT_DIR ?? 'data/snapshots';

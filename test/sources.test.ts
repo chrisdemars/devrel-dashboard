@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
-import sources, { envList, runSource, STATUS, type Source } from '../src/lib/sources';
+import { allSources, envList, runSource, STATUS, type Source } from '../src/lib/sources';
 
 const base = { id: 't', name: 't', category: 'web' } as const;
 
@@ -55,7 +55,7 @@ describe('envList', () => {
 
 describe('manual logs', () => {
   let dir: string;
-  const conferences = () => sources.find((s) => s.id === 'conferences') as Source;
+  const conferences = () => allSources.find((s) => s.id === 'conferences') as Source;
 
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), 'devrel-manual-'));
@@ -89,6 +89,6 @@ describe('manual logs', () => {
 });
 
 test('every source has a unique id', () => {
-  const ids = sources.map((s) => s.id);
+  const ids = allSources.map((s) => s.id);
   expect(new Set(ids).size).toBe(ids.length);
 });

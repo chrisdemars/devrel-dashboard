@@ -3,9 +3,11 @@
 // Every run produces one of these statuses, so the dashboard can show a
 // placeholder card for anything that isn't connected yet:
 //   ok              data was pulled
-//   not_configured  required .env values or files are missing (see `missing`)
+//   not_configured  required settings or files are missing (see `missing`)
 //   placeholder     the source is known but has no data feed yet (see `note`)
 //   error           configured, but the pull failed (see `error`)
+
+import { configValue } from '../config';
 
 export const STATUS = {
   OK: 'ok',
@@ -22,6 +24,11 @@ export interface EnvVar {
   name: string;
   required?: boolean;
   help: string;
+  /**
+   * Dotted path of the matching list in devrel.config.ts, e.g. 'packages.npm'.
+   * The config holds the usual value; the .env variable overrides it when set.
+   */
+  config?: string;
 }
 
 /** What a connector's `collect()` returns. It may override the status (e.g. a stub). */
@@ -38,7 +45,7 @@ export interface Source {
   id: string;
   name: string;
   category: SourceCategory;
-  /** Config read from .env. */
+  /** Settings read from .env, or from devrel.config.ts for entries with `config`. */
   env?: EnvVar[];
   /** At least one of these env vars must be set. */
   requireAny?: string[];
@@ -70,10 +77,37 @@ export function envList(name: string): string[] {
     .filter(Boolean);
 }
 
+/** A list setting: the .env variable when set, otherwise the list in devrel.config.ts. */
+export function listSetting(source: Source, name: string): string[] {
+  const fromEnv = envList(name);
+  if (fromEnv.length) return fromEnv;
+  const path = source.env?.find((e) => e.name === name)?.config;
+  const fromConfig = path ? configValue(path) : undefined;
+  return Array.isArray(fromConfig) ? fromConfig.map(String) : [];
+}
+
+/** How a setting is named in messages, e.g. "packages.npm in devrel.config.ts (or CLI_NPM_PACKAGES in .env)". */
+function label(e: EnvVar): string {
+  return e.config ? `${e.config} in devrel.config.ts (or ${e.name} in .env)` : e.name;
+}
+
+function isSet(source: Source, e: EnvVar): boolean {
+  return e.config ? listSetting(source, e.name).length > 0 : Boolean(env(e.name));
+}
+
+function missingVars(source: Source): EnvVar[] {
+  return (source.env ?? []).filter((e) => e.required && !isSet(source, e));
+}
+
+function requireAnyVars(source: Source): EnvVar[] {
+  return (source.requireAny ?? []).map((name) => source.env?.find((e) => e.name === name) ?? { name, help: '' });
+}
+
 export function missingConfig(source: Source): string[] {
-  const missing = (source.env ?? []).filter((e) => e.required && !env(e.name)).map((e) => e.name);
-  if (source.requireAny?.length && !source.requireAny.some((n) => env(n))) {
-    missing.push(`one of: ${source.requireAny.join(', ')}`);
+  const missing = missingVars(source).map(label);
+  const any = requireAnyVars(source);
+  if (any.length && !any.some((e) => isSet(source, e))) {
+    missing.push(`one of: ${any.map(label).join(', ')}`);
   }
   return missing;
 }
@@ -109,9 +143,9 @@ export async function runSource(source: Source): Promise<SourceResult> {
       ...base,
       status: STATUS.NOT_CONFIGURED,
       missing,
-      help: (source.env ?? [])
-        .filter((e) => missing.includes(e.name) || source.requireAny?.includes(e.name))
-        .map((e) => `${e.name}: ${e.help}`),
+      help: [...new Set([...missingVars(source), ...requireAnyVars(source)])]
+        .filter((e) => e.help)
+        .map((e) => `${label(e)}: ${e.help}`),
     };
   }
 

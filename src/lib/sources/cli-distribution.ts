@@ -1,8 +1,9 @@
 // CLI install metrics from public package registries. None of these need
 // credentials; each one stays "not_configured" until you add the package name
-// to .env, so you can switch channels on once distribution is decided.
+// under `packages` in devrel.config.ts (the .env variable overrides it), so you
+// can switch channels on once distribution is decided.
 
-import { env, envList, getJson, type Source } from './core';
+import { env, getJson, listSetting, type Source } from './core';
 
 interface NpmPoint { downloads: number }
 interface NpmRange { downloads: { day: string; downloads: number }[] }
@@ -18,10 +19,10 @@ export const npm: Source = {
   id: 'npm',
   name: 'npm downloads',
   category: 'cli',
-  env: [{ name: 'CLI_NPM_PACKAGES', required: true, help: 'Comma-separated npm package names, e.g. @acme/cli' }],
+  env: [{ name: 'CLI_NPM_PACKAGES', config: 'packages.npm', required: true, help: 'npm package names, e.g. @acme/cli' }],
   async collect() {
     const packages: Record<string, unknown> = {};
-    for (const pkg of envList('CLI_NPM_PACKAGES')) {
+    for (const pkg of listSetting(npm, 'CLI_NPM_PACKAGES')) {
       const [week, month] = await Promise.all([
         getJson<NpmPoint>(`https://api.npmjs.org/downloads/point/last-week/${pkg}`),
         getJson<NpmRange>(`https://api.npmjs.org/downloads/range/last-month/${pkg}`),
@@ -42,8 +43,8 @@ export const homebrew: Source = {
   category: 'cli',
   requireAny: ['CLI_HOMEBREW_FORMULAE', 'CLI_HOMEBREW_CASKS'],
   env: [
-    { name: 'CLI_HOMEBREW_FORMULAE', required: false, help: 'Comma-separated formula names in homebrew-core' },
-    { name: 'CLI_HOMEBREW_CASKS', required: false, help: 'Comma-separated cask names in homebrew-cask' },
+    { name: 'CLI_HOMEBREW_FORMULAE', config: 'packages.homebrewFormulae', required: false, help: 'Formula names in homebrew-core' },
+    { name: 'CLI_HOMEBREW_CASKS', config: 'packages.homebrewCasks', required: false, help: 'Cask names in homebrew-cask' },
   ],
   async collect() {
     const items: Record<string, Record<string, number>> = {};
@@ -54,8 +55,8 @@ export const homebrew: Source = {
         ['30d', '90d', '365d'].map((p) => [p, Object.values(installs[p] ?? {}).reduce((a, b) => a + b, 0)]),
       );
     };
-    for (const name of envList('CLI_HOMEBREW_FORMULAE')) await fetchOne('formula', name);
-    for (const name of envList('CLI_HOMEBREW_CASKS')) await fetchOne('cask', name);
+    for (const name of listSetting(homebrew, 'CLI_HOMEBREW_FORMULAE')) await fetchOne('formula', name);
+    for (const name of listSetting(homebrew, 'CLI_HOMEBREW_CASKS')) await fetchOne('cask', name);
     return {
       metrics: { items },
       note: 'Only homebrew-core and homebrew-cask publish analytics. A private tap (acme/tap) has no install stats; use GitHub release downloads or the manual installs log instead.',
@@ -67,10 +68,10 @@ export const pypi: Source = {
   id: 'pypi',
   name: 'PyPI downloads',
   category: 'cli',
-  env: [{ name: 'CLI_PYPI_PACKAGES', required: true, help: 'Comma-separated PyPI package names' }],
+  env: [{ name: 'CLI_PYPI_PACKAGES', config: 'packages.pypi', required: true, help: 'PyPI package names' }],
   async collect() {
     const packages: Record<string, unknown> = {};
-    for (const pkg of envList('CLI_PYPI_PACKAGES')) {
+    for (const pkg of listSetting(pypi, 'CLI_PYPI_PACKAGES')) {
       const { data } = await getJson<PypiRecent>(`https://pypistats.org/api/packages/${pkg.toLowerCase()}/recent`);
       packages[pkg] = { lastDay: data.last_day, lastWeek: data.last_week, lastMonth: data.last_month };
     }
@@ -82,10 +83,10 @@ export const dockerHub: Source = {
   id: 'docker-hub',
   name: 'Docker Hub pulls',
   category: 'cli',
-  env: [{ name: 'CLI_DOCKER_IMAGES', required: true, help: 'Comma-separated namespace/repo, e.g. acme/cli' }],
+  env: [{ name: 'CLI_DOCKER_IMAGES', config: 'packages.docker', required: true, help: 'namespace/repo on Docker Hub, e.g. acme/cli' }],
   async collect() {
     const images: Record<string, unknown> = {};
-    for (const image of envList('CLI_DOCKER_IMAGES')) {
+    for (const image of listSetting(dockerHub, 'CLI_DOCKER_IMAGES')) {
       const data = await getJson<DockerRepo>(`https://hub.docker.com/v2/repositories/${image}/`);
       images[image] = { pullsAllTime: data.pull_count, stars: data.star_count };
     }
@@ -98,14 +99,14 @@ export const github: Source = {
   name: 'GitHub repo and release downloads',
   category: 'cli',
   env: [
-    { name: 'CLI_GITHUB_REPOS', required: true, help: 'Comma-separated owner/repo for your tool (and SDKs, samples, etc.)' },
+    { name: 'CLI_GITHUB_REPOS', config: 'packages.github', required: true, help: 'owner/repo for your tool (and SDKs, samples, etc.)' },
     { name: 'GITHUB_TOKEN', required: false, help: 'Optional read-only token; needed for private repos and higher rate limits' },
   ],
   async collect() {
     const token = env('GITHUB_TOKEN');
     const headers: Record<string, string> = token ? { authorization: `Bearer ${token}` } : {};
     const repos: Record<string, unknown> = {};
-    for (const repo of envList('CLI_GITHUB_REPOS')) {
+    for (const repo of listSetting(github, 'CLI_GITHUB_REPOS')) {
       const [info, releases] = await Promise.all([
         getJson<GithubRepo>(`https://api.github.com/repos/${repo}`, headers),
         getJson<GithubRelease[]>(`https://api.github.com/repos/${repo}/releases?per_page=100`, headers),
