@@ -56,7 +56,7 @@ const pageLabels = Object.fromEntries(
 
 export const configSchema = z.strictObject({
   org: z.strictObject({
-    /** Shown in the navigation, page titles and the report cover. */
+    /** Your organization's name, used in the report. */
     name: text,
     url: z.url('must be a full URL, e.g. https://example.com').optional(),
     logo: z

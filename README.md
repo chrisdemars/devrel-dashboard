@@ -54,7 +54,7 @@ export default defineConfig({
 
 | Setting | What it controls | Default |
 |---|---|---|
-| `org.name`, `org.url`, `org.logo` | Name, link and logo shown in the app and the report | `name` is required |
+| `org.name`, `org.url`, `org.logo` | Your organization's name and link, used in the report, and an optional logo for the navigation | `name` is required |
 | `theme.preset`, `theme.fonts` | Theme preset, and the heading, body and monospace fonts. See [Theme](#theme) | `default`; system fonts |
 | `sources.enabled` | `'all'`, or a list of source ids to show and collect | `'all'` |
 | `packages.*` | npm, Homebrew, PyPI, Docker Hub and GitHub names to track | none |
@@ -103,7 +103,7 @@ theme: {
 
 A stylesheet URL on another site, such as Google Fonts, is requested by each viewer's browser. Host the fonts under `public/` if you'd rather avoid that.
 
-**Logo.** Put the file under `public/` and set `org.logo` to `{ src: '/logo.svg', alt: 'Acme' }`. Without a logo, the organization name is shown.
+**Logo.** Optional. Put the file under `public/` and set `org.logo` to `{ src: '/logo.svg', alt: 'Acme' }`. It appears beside the app name in the navigation.
 
 ## Project layout
 ```

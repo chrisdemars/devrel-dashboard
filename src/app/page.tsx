@@ -6,7 +6,7 @@ export default function Home() {
     <main className="flex flex-1 flex-col justify-center gap-8 py-10">
       <div className="flex flex-col gap-4">
         <Eyebrow>{config.pages.overview}</Eyebrow>
-        <Headline lead={`${config.org.name} DevRel,`} accent="measured." />
+        <Headline lead="DevRel," accent="measured." />
       </div>
       <Card className="max-w-2xl">
         <p className="text-muted">

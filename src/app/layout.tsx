@@ -4,13 +4,14 @@ import type { CSSProperties } from 'react';
 import '@devrel-theme/theme.css';
 import { SiteNav } from '@/components/shell/site-nav';
 import { ThemeScript } from '@/components/shell/theme-script';
+import { APP_NAME } from '@/lib/app';
 import config from '@/lib/config';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: `${config.org.name} DevRel Dashboard`,
-    template: `%s · ${config.org.name} DevRel Dashboard`,
+    default: APP_NAME,
+    template: `%s · ${APP_NAME}`,
   },
   description: 'Track DevRel activity and show its impact.',
 };
@@ -48,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <div className="mx-auto flex w-full max-w-shell flex-1 flex-col px-4 py-10">{children}</div>
         <footer className="border-t border-line print:hidden">
           <div className="mx-auto flex w-full max-w-shell items-center justify-between gap-4 px-4 py-4 font-mono text-[0.7rem] tracking-[0.14em] text-muted uppercase">
-            <span>{config.org.name} DevRel Dashboard</span>
+            <span>{APP_NAME}</span>
             <Link href="/styleguide" className="hover:text-ink">
               Styleguide
             </Link>

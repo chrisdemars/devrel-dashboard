@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { APP_NAME } from '@/lib/app';
 import config from '@/lib/config';
 import { NAV_PAGES } from '@/lib/nav';
 import { NavLinks } from './nav-links';
@@ -14,9 +15,7 @@ function Brand() {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={logo.src} alt={logo.alt ?? name} className="h-6 w-auto" />
       )}
-      {/* With a logo, the name is still there for screen readers when the logo has its own alt text. */}
-      <span className={logo ? 'sr-only' : undefined}>{name}</span>
-      <span className="font-mono text-[0.7rem] font-normal tracking-[0.14em] text-muted uppercase">DevRel</span>
+      {APP_NAME}
     </Link>
   );
 }
