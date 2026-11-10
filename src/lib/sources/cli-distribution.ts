@@ -98,7 +98,7 @@ export const github: Source = {
   name: 'GitHub repo and release downloads',
   category: 'cli',
   env: [
-    { name: 'CLI_GITHUB_REPOS', required: true, help: 'Comma-separated owner/repo for the CLI (and portal, samples, etc.)' },
+    { name: 'CLI_GITHUB_REPOS', required: true, help: 'Comma-separated owner/repo for your tool (and SDKs, samples, etc.)' },
     { name: 'GITHUB_TOKEN', required: false, help: 'Optional read-only token; needed for private repos and higher rate limits' },
   ],
   async collect() {
