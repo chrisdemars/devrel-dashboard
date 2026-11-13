@@ -70,6 +70,8 @@ describe('getActivityLog', () => {
     expect(talks.types.map(({ key, count }) => [key, count])).toEqual(all.types.map(({ key, count }) => [key, count]));
     expect(talks.types.find((type) => type.current)?.key).toBe('talk');
     expect(talks.kpis[0].value).toBe(String(expected.length));
+    expect(talks.kpis[0].note).toContain('Talk only');
+    expect(talks.rows.every((row) => row.estAudience === expected.find((a) => a.id === row.id)?.estAudience)).toBe(true);
     expect(talks.types.find((type) => type.key === 'all')?.href).not.toContain('type=');
   });
 

@@ -116,6 +116,7 @@ function LogTable({ log }: { log: ActivityLog }) {
                   </Link>
                   <span className="block text-xs text-muted">
                     {row.typeLabel} · {formatDay(row.date)}
+                    {row.estAudience !== undefined && ` · about ${formatNumber(row.estAudience)} in the room`}
                     {row.madeFromIt > 0 && ` · ${row.madeFromIt} made from it`}
                   </span>
                 </th>

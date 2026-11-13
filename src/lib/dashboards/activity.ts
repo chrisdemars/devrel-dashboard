@@ -78,6 +78,8 @@ export interface LogRow {
   reach: number;
   engagements: number;
   keyEvents: number;
+  /** People in the room, for a talk. An estimate, so it is kept apart from reach. */
+  estAudience?: number;
   /** How many other activities were made from this one. */
   madeFromIt: number;
 }
@@ -144,6 +146,7 @@ export async function getActivityLog(store: DataStore, filters: Filters, context
       type: activity.type,
       typeLabel: typeLabel(activity.type),
       ...(activity.url && { url: activity.url }),
+      ...(activity.estAudience !== undefined && { estAudience: activity.estAudience }),
       tags: activity.tags.filter((tag) => tag !== activity.type),
       reach: reach.get(activity.id) ?? 0,
       engagements: engagements.get(activity.id) ?? 0,
@@ -194,7 +197,12 @@ export async function getActivityLog(store: DataStore, filters: Filters, context
       value: formatNumber(activities.length),
       ...against(activities.length, previous.length),
       trend: trend(() => 1),
-      note: activities.length > 0 ? `${counts.size} ${counts.size === 1 ? 'type' : 'types'} of work with these filters.` : none,
+      note:
+        activities.length === 0
+          ? none
+          : view.type
+            ? `${typeLabel(view.type)} only, out of ${formatNumber(matching.length)} activities of every type.`
+            : `${counts.size} ${counts.size === 1 ? 'type' : 'types'} of work with these filters.`,
     },
     {
       id: 'reach',
