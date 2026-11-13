@@ -10,11 +10,14 @@
  * [data-preset='your-name'], import it from config/theme.css, and set
  * theme.preset in config/devrel.config.ts.
  *
+ * :where() gives the :root rule below no weight, so your preset wins on the
+ * page itself whichever stylesheet loads last.
+ *
  * The chart colors are a set: their order keeps neighbors distinguishable for
  * color-blind readers. Change them together, then re-check.
  */
 
-:root,
+:where(:root),
 [data-preset='default'] {
   --dark-page: #0d0d0c;        /* Page background */
   --dark-surface: #1a1a19;     /* Cards and chart surfaces */
