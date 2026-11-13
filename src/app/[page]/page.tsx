@@ -9,7 +9,9 @@ import { Card, Eyebrow, Headline } from '@/components/ui';
 import config from '@/lib/config';
 import { NAV_PAGES } from '@/lib/nav';
 
-const PAGES = NAV_PAGES.filter(({ href }) => href !== '/');
+// Pages that have their own route. Add each one here as it is built.
+const BUILT = ['/', '/launch'];
+const PAGES = NAV_PAGES.filter(({ href }) => !BUILT.includes(href));
 
 export function generateStaticParams() {
   return PAGES.map(({ href }) => ({ page: href.slice(1) }));

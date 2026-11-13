@@ -4,7 +4,7 @@
 
 import { daysBetween, quarterOf } from '../data/dates';
 import type { DataStore, DateRange, MetricName, SourceStatusInfo, Target } from '../data/types';
-import { COMPARISON_LABELS, comparisonRange, toDataFilter, type FilterContext, type Filters } from '../filters';
+import { comparisonRange, toDataFilter, type FilterContext, type Filters } from '../filters';
 import { formatNumber, formatPercent, formatUsd } from '../format';
 import {
   comparePeriods,
@@ -16,11 +16,10 @@ import {
   rangeDays,
   reachByActivity,
   sumBuckets,
-  targetProgress,
   trendBucketDays,
-  type PeriodComparison,
 } from '../metrics';
 import type { SourceStatus } from '../sources/core';
+import { standing } from './standing';
 
 export interface OverviewKpi {
   id: string;
@@ -48,40 +47,6 @@ export interface Overview {
 }
 
 const STATUS_ORDER: SourceStatus[] = ['ok', 'not_configured', 'placeholder', 'error'];
-
-/** How a KPI stands against the selected comparison. */
-function standing(
-  filters: Filters,
-  compared: PeriodComparison | undefined,
-  target: { actual: number; value?: number; period: string; format: (value: number) => string } | undefined,
-): Pick<OverviewKpi, 'delta' | 'deltaLabel' | 'detail' | 'progress'> {
-  if (filters.compare === 'target') {
-    if (!target) return { detail: 'Targets are not set for this number.' };
-    if (target.value === undefined) return { detail: `No target set for ${target.period}.` };
-    const progress = targetProgress(target.actual, target.value, periodRange(target.period), filters.to);
-    if (progress.fraction === undefined) return { detail: `No target set for ${target.period}.` };
-    const pace = progress.met ? 'target met' : progress.onTrack ? 'on track' : 'behind pace';
-    return {
-      progress: progress.fraction,
-      detail: `${target.period}: ${target.format(target.actual)} of ${target.format(target.value)} (${formatPercent(progress.fraction)}), ${pace}`,
-    };
-  }
-  if (!compared || compared.change === undefined) {
-    if (compared && compared.current > 0) {
-      return { detail: filters.compare === 'baseline' ? 'New since the baseline.' : 'New since the previous period.' };
-    }
-    return {
-      detail:
-        filters.compare === 'baseline'
-          ? 'Nothing in the baseline to compare with.'
-          : 'Nothing in the previous period to compare with.',
-    };
-  }
-  return {
-    delta: compared.change,
-    deltaLabel: `${COMPARISON_LABELS[filters.compare]}${compared.basis === 'daily_average' ? ', per day' : ''}`,
-  };
-}
 
 function sourceSummary(statuses: SourceStatusInfo[]): Overview['sources'] {
   return {
