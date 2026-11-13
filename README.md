@@ -142,6 +142,9 @@ templates/                 Header-only CSV templates for manual logs
 test/                      Unit tests
 ```
 
+## Leadership report
+`/report` lays one quarter out for print: a cover, headline numbers, reach, what is working and what is not, the data access still needed, and the ask. Pick the quarter with `?period=2027-Q1` and narrow it with `?tags=`. "Export PDF" opens the browser's print dialog; choose "Save as PDF". It prints in the light theme with a section per page and page numbers. The narrative text comes from report notes.
+
 ## UTM links and QR codes
 Tag every link you share, so traffic can be traced back to the channel and the event it came from. `npm run utm` builds the link for you and keeps the naming consistent:
 

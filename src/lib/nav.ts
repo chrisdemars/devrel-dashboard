@@ -14,4 +14,6 @@ export const NAV_PAGES: { id: PageId; href: string; filtered: boolean }[] = [
   { id: 'capacity', href: '/capacity', filtered: true },
   { id: 'activity', href: '/activity', filtered: true },
   { id: 'sources', href: '/sources', filtered: false },
+  // The report keeps the tags; it has its own period in place of the date range.
+  { id: 'report', href: '/report', filtered: true },
 ];
