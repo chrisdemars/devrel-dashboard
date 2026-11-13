@@ -191,7 +191,11 @@ export function generateSampleData(options: SampleOptions): SampleData {
       const campaign = slug(title).split('-').slice(0, 4).join('-');
       const blogId = `blog-${n}`;
       activities.push({ id: blogId, type: 'blog', title, date, url: `${SITE}/blog/${slug(title)}`, utmCampaign: campaign, tags: ['blog', ...tags] });
-      measure(blogId, 'blog', 'views', random.int(900, 2600) * growth(date));
+      const views = random.int(900, 2600) * growth(date);
+      measure(blogId, 'blog', 'views', views);
+      // Some posts convert far better than their traffic suggests. The rate depends only on the post's
+      // position, so it draws no random numbers and leaves the rest of the sample data unchanged.
+      measure(blogId, 'blog', 'key_events', views * (0.012 + 0.011 * ((i * 3) % 5)));
       // The social posts announcing it count toward the blog post itself.
       for (const platform of ['x', 'linkedin']) {
         const reach = random.int(1400, 6200) * growth(date);
