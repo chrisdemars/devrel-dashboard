@@ -49,6 +49,14 @@ test('the default preset exists, and preset names are unique', () => {
   expect(new Set(names).size).toBe(names.length);
 });
 
+test('the default preset never outranks an organization preset on the page', () => {
+  // A plain :root selector ties with [data-preset='name'] and then wins or
+  // loses by load order. :where(:root) always loses, which is what we want.
+  const css = readFileSync('src/theme/default.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  expect(css).toContain(":where(:root),\n[data-preset='default'] {");
+  expect(css).not.toMatch(/(^|[\s,}]):root/);
+});
+
 test('the preset named in the org config exists', () => {
   expect(presets.map((p) => p.name)).toContain(config.theme.preset);
 });
