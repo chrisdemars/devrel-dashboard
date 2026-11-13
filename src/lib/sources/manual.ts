@@ -25,10 +25,12 @@ function manualLog({ id, name, category, file, summarize }: ManualLog): Source {
     category,
     file,
     async collect() {
-      const path = join(manualDir(), file);
+      // The folder is chosen at run time and only the collector reads it, so
+      // the app's bundler is told not to trace it (it would pull in the whole project).
+      const path = join(/* turbopackIgnore: true */ manualDir(), file);
       let text: string;
       try {
-        text = await readFile(path, 'utf8');
+        text = await readFile(/* turbopackIgnore: true */ path, 'utf8');
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
         return {

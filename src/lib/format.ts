@@ -1,4 +1,4 @@
-// Number formatting shared by the dashboards and the report.
+// Number and date formatting shared by the dashboards and the report.
 
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
@@ -43,4 +43,16 @@ export function describeDelta(change: number, goodWhen: 'up' | 'down' = 'up'): D
 export function changeFrom(previous: number, current: number): number | undefined {
   if (!Number.isFinite(previous) || !Number.isFinite(current) || previous === 0) return undefined;
   return (current - previous) / Math.abs(previous);
+}
+
+const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+
+/** '2026-12-15' → "Dec 15, 2026". */
+export function formatDay(value: string): string {
+  return day.format(new Date(`${value}T00:00:00Z`));
+}
+
+/** "Dec 15, 2026 – Mar 15, 2027", or one date when both ends are the same day. */
+export function formatDayRange(from: string, to: string): string {
+  return from === to ? formatDay(from) : `${formatDay(from)} – ${formatDay(to)}`;
 }

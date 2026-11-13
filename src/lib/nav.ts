@@ -3,14 +3,15 @@
 
 import type { PageId } from './config/schema';
 
-export const NAV_PAGES: { id: PageId; href: string }[] = [
-  { id: 'overview', href: '/' },
-  { id: 'launch', href: '/launch' },
-  { id: 'content', href: '/content' },
-  { id: 'streams', href: '/streams' },
-  { id: 'events', href: '/events' },
-  { id: 'pipeline', href: '/pipeline' },
-  { id: 'capacity', href: '/capacity' },
-  { id: 'activity', href: '/activity' },
-  { id: 'sources', href: '/sources' },
+/** `filtered` pages show the filter bar; links between them keep the filters. */
+export const NAV_PAGES: { id: PageId; href: string; filtered: boolean }[] = [
+  { id: 'overview', href: '/', filtered: true },
+  { id: 'launch', href: '/launch', filtered: true },
+  { id: 'content', href: '/content', filtered: true },
+  { id: 'streams', href: '/streams', filtered: true },
+  { id: 'events', href: '/events', filtered: true },
+  { id: 'pipeline', href: '/pipeline', filtered: true },
+  { id: 'capacity', href: '/capacity', filtered: true },
+  { id: 'activity', href: '/activity', filtered: true },
+  { id: 'sources', href: '/sources', filtered: false },
 ];
