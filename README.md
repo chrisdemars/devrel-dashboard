@@ -194,7 +194,7 @@ With `--qr`, the QR code is written as an SVG file to `data/qr/<campaign>-<chann
 | Business | CRM, product usage, product sign-ups | Placeholders until access is granted |
 | Manual | Followers, conferences, content multiplier, sales-flagged deals, cross-team work, declined requests | CSV logs |
 
-Each source reports one of these statuses: `ok`, `not_configured` (lists what's missing), `placeholder` (no data feed yet), or `error`.
+Each source reports one of these statuses: `ok`, `not_configured` (lists what's missing), `placeholder` (no data feed yet), or `error`. `npm run status` prints them, and the Data sources page in the app shows the same states with setup notes for each source.
 
 ## Manual logs
 Copy a header-only template from `templates/` into `data/manual/` and add rows. You can also export the matching Google Sheet tab as CSV to the same place.
