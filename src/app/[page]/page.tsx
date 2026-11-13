@@ -10,7 +10,7 @@ import config from '@/lib/config';
 import { NAV_PAGES } from '@/lib/nav';
 
 // Pages that have their own route. Add each one here as it is built.
-const BUILT = ['/', '/launch', '/content', '/streams', '/events', '/pipeline', '/capacity'];
+const BUILT = ['/', '/launch', '/content', '/streams', '/events', '/pipeline', '/capacity', '/activity'];
 const PAGES = NAV_PAGES.filter(({ href }) => !BUILT.includes(href));
 
 export function generateStaticParams() {
