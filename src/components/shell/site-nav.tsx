@@ -23,7 +23,7 @@ function Brand() {
 
 /** The top navigation shown on every page. Hidden in print. */
 export function SiteNav() {
-  const items = NAV_PAGES.map(({ id, href }) => ({ href, label: config.pages[id] }));
+  const items = NAV_PAGES.map(({ id, href, filtered }) => ({ href, filtered, label: config.pages[id] }));
 
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-page/90 backdrop-blur print:hidden">
@@ -44,7 +44,7 @@ export function SiteNav() {
       {/* The links get their own row: nine labels, which an organization can rename, do not fit beside the brand. */}
       {/* On narrow screens the row scrolls sideways instead of wrapping. */}
       <nav aria-label="Pages" className="mx-auto h-10 w-full max-w-shell overflow-x-auto px-1.5">
-        {/* usePathname needs a Suspense boundary so the rest of the page can be prerendered. */}
+        {/* usePathname and useSearchParams need a Suspense boundary so the rest of the page can be prerendered. */}
         <Suspense fallback={null}>
           <NavLinks items={items} />
         </Suspense>
