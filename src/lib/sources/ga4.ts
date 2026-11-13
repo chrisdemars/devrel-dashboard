@@ -26,6 +26,11 @@ const ga4: Source = {
   id: 'ga4',
   name: 'Google Analytics 4 (blog and site)',
   category: 'web',
+  setup: [
+    'In the Google Cloud console, enable the "Google Analytics Data API" and create a service account. Download its JSON key into ./secrets/ (gitignored).',
+    "In GA4 > Admin > Property access management, add the service account's email as a Viewer.",
+    'In GA4 > Admin > Property details, copy the numeric Property ID.',
+  ],
   env: [
     { name: 'GA4_PROPERTY_ID', required: true, help: 'Numeric GA4 property ID (Admin > Property details)' },
     { name: 'GOOGLE_APPLICATION_CREDENTIALS', required: true, help: 'Path to the service account JSON key, e.g. ./secrets/ga4-service-account.json' },

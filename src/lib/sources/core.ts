@@ -51,6 +51,8 @@ export interface Source {
   requireAny?: string[];
   /** No connector yet: always reports "placeholder" with this note. */
   placeholder?: string;
+  /** Steps to connect the source, shown on the Data sources page. */
+  setup?: string[];
   /** Manual logs: the CSV file name under the manual data directory. */
   file?: string;
   collect?: () => Promise<CollectResult>;
@@ -63,6 +65,8 @@ export interface SourceResult extends Omit<CollectResult, 'status'> {
   status: SourceStatus;
   error?: string;
   plannedConfig?: string[];
+  /** Steps to connect the source. */
+  setup?: string[];
 }
 
 export function env(name: string): string | undefined {
@@ -112,6 +116,13 @@ export function missingConfig(source: Source): string[] {
   return missing;
 }
 
+/** What each missing setting is, one line per setting. */
+export function missingHelp(source: Source): string[] {
+  return [...new Set([...missingVars(source), ...requireAnyVars(source)])]
+    .filter((e) => e.help)
+    .map((e) => `${label(e)}: ${e.help}`);
+}
+
 export async function getJson<T = unknown>(url: string, headers: Record<string, string> = {}): Promise<T> {
   const res = await fetch(url, {
     headers: { 'user-agent': 'devrel-dashboard', accept: 'application/json', ...headers },
@@ -143,9 +154,7 @@ export async function runSource(source: Source): Promise<SourceResult> {
       ...base,
       status: STATUS.NOT_CONFIGURED,
       missing,
-      help: [...new Set([...missingVars(source), ...requireAnyVars(source)])]
-        .filter((e) => e.help)
-        .map((e) => `${label(e)}: ${e.help}`),
+      help: missingHelp(source),
     };
   }
 

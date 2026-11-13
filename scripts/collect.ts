@@ -2,14 +2,13 @@
 //   npm run status    show every source and what it still needs (no network calls)
 //   npm run collect   pull every configured source and write a dated snapshot
 
-import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { SourceResult } from '../src/lib/sources';
 
 // Loading the sources also loads and validates devrel.config.ts. Show a config
 // problem as a plain message instead of a stack trace.
-const { default: sources, manualDir, missingConfig, runSource, STATUS } = await import('../src/lib/sources').catch(
+const { default: sources, checkSources, runSource, snapshotDir, STATUS } = await import('../src/lib/sources').catch(
   (err: unknown) => {
     if (!(err instanceof Error) || err.name !== 'ConfigError') throw err;
     console.error(err.message);
@@ -18,7 +17,7 @@ const { default: sources, manualDir, missingConfig, runSource, STATUS } = await 
 );
 
 const ICON: Record<SourceResult['status'], string> = { ok: '✔', not_configured: '○', placeholder: '◌', error: '✖' };
-const SNAPSHOT_DIR = process.env.SNAPSHOT_DIR ?? 'data/snapshots';
+const SNAPSHOT_DIR = snapshotDir();
 
 function printResults(results: SourceResult[]) {
   let category: string | undefined;
@@ -38,17 +37,7 @@ function printResults(results: SourceResult[]) {
 
 function status() {
   // Config check only, no network calls.
-  const results: SourceResult[] = sources.map((s) => {
-    const base = { id: s.id, name: s.name, category: s.category };
-    if (s.placeholder) return { ...base, status: STATUS.PLACEHOLDER, note: s.placeholder };
-    const missing = s.file
-      ? existsSync(join(manualDir(), s.file))
-        ? []
-        : [join(manualDir(), s.file)]
-      : missingConfig(s);
-    return { ...base, status: missing.length ? STATUS.NOT_CONFIGURED : STATUS.OK, missing };
-  });
-  printResults(results);
+  printResults(checkSources(sources));
 }
 
 async function collect() {
