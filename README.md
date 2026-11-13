@@ -63,6 +63,7 @@ export default defineConfig({
 | `sources.enabled` | `'all'`, or a list of source ids to show and collect | `'all'` |
 | `packages.*` | npm, Homebrew, PyPI, Docker Hub and GitHub names to track | none |
 | `ga4.keyEvents` | GA4 key events to report | every key event |
+| `team.people` | How many people do the work; the staffing model on the Capacity page starts from it | `1` |
 | `launch.date`, `launch.label` | The launch the dashboard counts down to | none |
 | `pages.*` | Labels for each page | built-in labels |
 | `tags.builtIn`, `tags.suggested` | Activity types, and free-form tags to suggest | 8 activity types; none |

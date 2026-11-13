@@ -18,6 +18,8 @@ export interface Activity {
   notes?: string;
   /** The blog post this was made from, for a short, stream or social post. */
   parentId?: string;
+  /** The team a cross-team contribution was for, e.g. 'docs'. */
+  team?: string;
   /** The activity type plus any free-form tags. */
   tags: string[];
 }
