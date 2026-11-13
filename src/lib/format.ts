@@ -15,10 +15,12 @@ export function formatPercent(fraction: number): string {
 }
 
 const usdWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+// minimumFractionDigits is set because some Node versions otherwise pad compact currency: "$150.0K".
 const usdCompact = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
   notation: 'compact',
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1,
 });
 
