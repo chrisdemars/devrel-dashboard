@@ -19,6 +19,7 @@ import {
   trendBucketDays,
 } from '../metrics';
 import type { SourceStatus } from '../sources/core';
+import { dealBuckets } from './shared';
 import { standing } from './standing';
 
 export interface OverviewKpi {
@@ -124,10 +125,7 @@ export async function getOverview(
       )
     : undefined;
 
-  // Totals per bucket rather than individual deals, which only admins may read.
-  const pipelineTrend = (
-    await Promise.all(sumBuckets([], range, bucketDays).map(({ from, to }) => store.getDealTotals({ from, to })))
-  ).map((totals) => totals.amountUsd);
+  const pipelineTrend = (await dealBuckets(store, range, bucketDays)).map((bucket) => bucket.amountUsd);
 
   const kpis: OverviewKpi[] = [
     metricKpi(

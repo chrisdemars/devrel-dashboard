@@ -1,9 +1,9 @@
 // Pieces every dashboard's data module uses: chart rows and series, display
 // names for the keys found in the data, and how wide a chart column is.
 
-import type { DateRange } from '../data/types';
+import type { DataStore, DateRange, DealTotals } from '../data/types';
 import { formatDay, formatDayRange } from '../format';
-import { rangeDays } from '../metrics';
+import { rangeDays, sumBuckets } from '../metrics';
 
 export interface ChartSeries {
   key: string;
@@ -75,4 +75,14 @@ export function seriesFor(known: string[], present: string[], everSeen: string[]
       label: labelFor(key),
       colorIndex: known.includes(key) ? known.indexOf(key) : known.length + extras.indexOf(key),
     }));
+}
+
+/**
+ * Deal totals for each bucket of a range, oldest first. It asks for totals
+ * per bucket rather than individual deals, which only admins may read.
+ */
+export async function dealBuckets(store: DataStore, range: DateRange, days: number): Promise<(DateRange & DealTotals)[]> {
+  const buckets = sumBuckets([], range, days);
+  const totals = await Promise.all(buckets.map(({ from, to }) => store.getDealTotals({ from, to })));
+  return buckets.map(({ from, to }, i) => ({ from, to, ...totals[i] }));
 }

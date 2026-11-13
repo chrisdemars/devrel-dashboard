@@ -12,13 +12,15 @@ interface BarListProps {
   rows: BarListRow[];
   /** Position in the chart palette. One color for the whole list: the bars differ by size, not by kind. */
   colorIndex?: number;
+  /** How to print each value. Compact numbers by default; pass `formatUsd` for money. */
+  format?: (value: number) => string;
 }
 
 /**
  * Horizontal bars, one per row, with the value printed beside each. Every
  * number is on show, so it needs no tooltip.
  */
-export function BarList({ rows, colorIndex = 0 }: BarListProps) {
+export function BarList({ rows, colorIndex = 0, format = formatNumber }: BarListProps) {
   const max = Math.max(...rows.map((row) => row.value), 0);
 
   return (
@@ -28,7 +30,7 @@ export function BarList({ rows, colorIndex = 0 }: BarListProps) {
           <div className="flex items-baseline justify-between gap-3 text-sm">
             <span>{label}</span>
             <span className="tabular-nums">
-              <span className="font-semibold">{formatNumber(value)}</span>
+              <span className="font-semibold">{format(value)}</span>
               {share !== undefined && <span className="ml-2 text-muted">{formatPercent(share)}</span>}
             </span>
           </div>
