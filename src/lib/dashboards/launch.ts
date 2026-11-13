@@ -4,7 +4,7 @@
 import { quarterOf } from '../data/dates';
 import type { DataStore, DateRange, MetricName, MetricPoint } from '../data/types';
 import { comparisonRange, type FilterContext, type Filters } from '../filters';
-import { formatDay, formatDayRange, formatNumber, formatPercent } from '../format';
+import { formatNumber, formatPercent } from '../format';
 import {
   comparePeriods,
   compareMetric,
@@ -12,11 +12,13 @@ import {
   metricBuckets,
   metricTotal,
   periodRange,
-  rangeDays,
   trendBucketDays,
   type BreakdownRow,
 } from '../metrics';
+import { chartBucketDays, labelFor, rowLabels, type ChartRow, type ChartSeries } from './shared';
 import { standing, type Standing } from './standing';
+
+export { chartBucketDays, labelFor, type ChartRow, type ChartSeries } from './shared';
 
 export interface LaunchKpi extends Standing {
   id: string;
@@ -24,21 +26,6 @@ export interface LaunchKpi extends Standing {
   value: string;
   trend: number[];
   note: string;
-}
-
-export interface ChartSeries {
-  key: string;
-  label: string;
-  /** Position in the chart palette. It belongs to the series, so it never changes with the filters. */
-  colorIndex: number;
-}
-
-export interface ChartRow {
-  /** Short label for the axis, e.g. "Jan 4". */
-  label: string;
-  /** Full label for the tooltip and the table, e.g. "Jan 4, 2027 – Jan 10, 2027". */
-  period: string;
-  values: Record<string, number>;
 }
 
 export interface Launch {
@@ -52,33 +39,6 @@ export interface Launch {
 
 // Known install channels, in a fixed order so each keeps its color.
 const CHANNELS = ['npm', 'homebrew', 'github', 'pypi', 'docker'];
-const LABELS: Record<string, string> = {
-  npm: 'npm',
-  homebrew: 'Homebrew',
-  github: 'GitHub releases',
-  pypi: 'PyPI',
-  docker: 'Docker Hub',
-  unknown: 'Unknown',
-};
-
-/** "organic_search" → "Organic search". */
-export function labelFor(key: string): string {
-  const words = key.replaceAll(/[_-]+/g, ' ').trim();
-  return LABELS[key] ?? (words ? words[0].toUpperCase() + words.slice(1) : 'Unknown');
-}
-
-/** Column width in days: days for a short range, weeks for a quarter, 30 days for longer. */
-export function chartBucketDays(range: DateRange): number {
-  const days = rangeDays(range);
-  return days <= 16 ? 1 : days <= 16 * 7 ? 7 : 30;
-}
-
-const shortDay = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-
-function rowLabels({ from, to }: DateRange): Pick<ChartRow, 'label' | 'period'> {
-  return { label: shortDay.format(new Date(`${from}T00:00:00Z`)), period: from === to ? formatDay(from) : formatDayRange(from, to) };
-}
-
 const hasAny = (points: MetricPoint[], metric: MetricName) => points.some((point) => point.metric === metric);
 
 export async function getLaunch(store: DataStore, filters: Filters, context: FilterContext): Promise<Launch> {
