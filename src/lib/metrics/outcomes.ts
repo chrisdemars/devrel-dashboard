@@ -54,6 +54,21 @@ export function costPerOutcome(rows: CostInput[]): CostRow[] {
  */
 export const REACH_METRICS: ActivityMetricName[] = ['views', 'reach', 'live_viewers', 'replay_views'];
 
+/** People reached by each activity, by activity id. */
+export function reachByActivity(metrics: ActivityMetric[]): Map<string, number> {
+  const reach = new Map<string, number>();
+  for (const { activityId, metric, value } of metrics) {
+    if (!REACH_METRICS.includes(metric) || !Number.isFinite(value)) continue;
+    reach.set(activityId, (reach.get(activityId) ?? 0) + value);
+  }
+  return reach;
+}
+
+/** People reached by a set of activities, all platforms and formats together. */
+export function totalReach(metrics: ActivityMetric[]): number {
+  return [...reachByActivity(metrics).values()].reduce((total, value) => total + value, 0);
+}
+
 export interface ContentRollup {
   /** The original piece, usually a blog post. */
   post: Activity;

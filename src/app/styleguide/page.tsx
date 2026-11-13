@@ -82,6 +82,13 @@ function Showcase() {
             trend={[...TREND].reverse()}
           />
           <KpiTile label="Activation rate" value="38%" delta={0} deltaLabel="vs baseline" />
+          <KpiTile
+            label="Site sessions"
+            value={48_200}
+            progress={0.77}
+            detail="77% of the quarter's target, on track"
+            trend={TREND}
+          />
         </div>
       </Section>
 

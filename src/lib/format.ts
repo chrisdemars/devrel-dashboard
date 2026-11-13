@@ -14,6 +14,19 @@ export function formatPercent(fraction: number): string {
   return percent.format(fraction);
 }
 
+const usdWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const usdCompact = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+/** 950 → "$950", 84000 → "$84K", 1250000 → "$1.3M". */
+export function formatUsd(value: number): string {
+  return Math.abs(value) < 10_000 ? usdWhole.format(value) : usdCompact.format(value);
+}
+
 export type Direction = 'up' | 'down' | 'flat';
 
 export interface Delta {
