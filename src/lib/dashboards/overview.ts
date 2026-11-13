@@ -67,6 +67,9 @@ function standing(
     };
   }
   if (!compared || compared.change === undefined) {
+    if (compared && compared.current > 0) {
+      return { detail: filters.compare === 'baseline' ? 'New since the baseline.' : 'New since the previous period.' };
+    }
     return {
       detail:
         filters.compare === 'baseline'
@@ -118,9 +121,9 @@ export async function getOverview(
 
   const targetFor = (metric: Target['metric']) =>
     targets.find((target) => target.metric === metric && target.period === period)?.value;
-  // A note written for the report wins over the generated line.
-  const noteFor = (metric: Target['metric'], fallback: string) =>
-    notes.find((note) => note.section === 'so_what' && note.metric === metric)?.text ?? fallback;
+  // A note written for the report wins over the generated line, unless there is nothing to explain.
+  const noteFor = (metric: Target['metric'], total: number, fallback: string) =>
+    (total > 0 && notes.find((note) => note.section === 'so_what' && note.metric === metric)?.text) || fallback;
 
   function metricKpi(id: MetricName, label: string, fallbackNote: string): OverviewKpi {
     return {
@@ -134,7 +137,7 @@ export async function getOverview(
         format: formatNumber,
       }),
       trend: metricBuckets(points, id, range, bucketDays).map((bucket) => bucket.value),
-      note: noteFor(id, fallbackNote),
+      note: noteFor(id, metricTotal(points, id, range), fallbackNote),
       tagged: false,
     };
   }
@@ -200,6 +203,7 @@ export async function getOverview(
       trend: pipelineTrend,
       note: noteFor(
         'influenced_pipeline_usd',
+        dealTotals.amountUsd,
         topTouchpoint
           ? `${dealTotals.count} ${dealTotals.count === 1 ? 'deal' : 'deals'}; ${topTouchpoint.touchpoint} is the biggest touchpoint.`
           : 'No influenced deals logged in this period.',
