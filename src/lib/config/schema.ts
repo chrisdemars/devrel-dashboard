@@ -125,6 +125,13 @@ export const configSchema = z.strictObject({
     })
     .optional(),
 
+  team: z
+    .strictObject({
+      /** How many people do the work the dashboard tracks. The staffing model on the Capacity page starts from it. */
+      people: z.number({ error: 'must be a number' }).positive('must be more than 0').default(1),
+    })
+    .prefault({}),
+
   /** Rename pages. Anything left out keeps its default label. */
   pages: z.strictObject(pageLabels).prefault({}),
 

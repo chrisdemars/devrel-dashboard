@@ -30,6 +30,7 @@ describe('parseConfig', () => {
       sources: { enabled: 'all' },
       packages: { npm: [], homebrewFormulae: [], homebrewCasks: [], pypi: [], docker: [], github: [] },
       ga4: { keyEvents: [] },
+      team: { people: 1 },
       pages: PAGE_LABELS,
       tags: { builtIn: BUILT_IN_TAGS, suggested: [] },
     });

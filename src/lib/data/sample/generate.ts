@@ -100,15 +100,15 @@ const EVENTS: { name: string; location: string; offset: number; status: CfpStatu
   { name: 'Orchard Developer Days', location: 'Dublin', offset: 140, status: 'submitted', talk: 'A year of scanning in the open' },
 ];
 
-const CROSS_TEAM = [
-  'Rewrote the quickstart with the docs team',
-  'Reviewed error messages with the engineering team',
-  'Tested the installer on three platforms before release',
-  'Wrote the migration guide with the docs team',
-  'Recorded a demo for the sales kickoff',
-  'Reviewed the sign-up flow with the product team',
-  'Drafted release notes with the engineering team',
-  'Ran an internal workshop on the command line tool',
+const CROSS_TEAM: { title: string; team: string }[] = [
+  { title: 'Rewrote the quickstart with the docs team', team: 'docs' },
+  { title: 'Reviewed error messages with the engineering team', team: 'engineering' },
+  { title: 'Tested the installer on three platforms before release', team: 'engineering' },
+  { title: 'Wrote the migration guide with the docs team', team: 'docs' },
+  { title: 'Recorded a demo for the sales kickoff', team: 'sales' },
+  { title: 'Reviewed the sign-up flow with the product team', team: 'product' },
+  { title: 'Drafted release notes with the engineering team', team: 'engineering' },
+  { title: 'Ran an internal workshop on the command line tool', team: 'sales' },
 ];
 
 const COMMUNITY = [
@@ -272,8 +272,8 @@ export function generateSampleData(options: SampleOptions): SampleData {
   // ---- Work that is not content: other teams, community, product feedback ----
   const spread = (count: number, i: number, shift: number) => days[Math.min(Math.floor(((i + 0.5) * days.length) / count) + shift, days.length - 1)];
   if (has('cross-team')) {
-    CROSS_TEAM.forEach((title, i) => {
-      activities.push({ id: `cross-team-${pad(i + 1)}`, type: 'cross-team', title, date: spread(CROSS_TEAM.length, i, 2), tags: ['cross-team', ...customTag(i + 2)] });
+    CROSS_TEAM.forEach(({ title, team }, i) => {
+      activities.push({ id: `cross-team-${pad(i + 1)}`, type: 'cross-team', title, team, date: spread(CROSS_TEAM.length, i, 2), tags: ['cross-team', ...customTag(i + 2)] });
     });
   }
   if (has('community')) {

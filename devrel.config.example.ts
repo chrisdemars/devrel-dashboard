@@ -55,6 +55,11 @@ export default defineConfig({
     label: 'Acme CLI launch',
   },
 
+  team: {
+    // How many people do this work today. The Capacity page works out what one more would add.
+    people: 1,
+  },
+
   // Rename any page. Pages you leave out keep their default label.
   pages: {
     launch: 'Product launch',
