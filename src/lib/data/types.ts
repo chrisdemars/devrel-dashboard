@@ -37,7 +37,15 @@ export interface ActivityMetric {
   value: number;
 }
 
-export type ActivityMetricName = 'views' | 'reach' | 'engagements' | 'live_viewers' | 'peak_viewers' | 'replay_views';
+export type ActivityMetricName =
+  | 'views'
+  | 'reach'
+  | 'engagements'
+  | 'live_viewers'
+  | 'peak_viewers'
+  | 'replay_views'
+  /** Key events on the site in visits that started on this piece, e.g. a demo request after reading a post. */
+  | 'key_events';
 
 export type CfpStatus = 'given' | 'accepted' | 'submitted' | 'rejected' | 'invited' | 'declined';
 
