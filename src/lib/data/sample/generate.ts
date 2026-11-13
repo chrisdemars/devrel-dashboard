@@ -247,6 +247,8 @@ export function generateSampleData(options: SampleOptions): SampleData {
       const qrScans = Math.round(estAudience * random.float(0.08, 0.15));
       conference.estAudience = estAudience;
       conference.qrScans = qrScans;
+      // Scans plus people who typed the link later. Worked out from the position, so it draws no random numbers.
+      conference.siteVisits = Math.round(qrScans * (1.4 + 0.2 * (i % 4)));
       conference.leadsToSales = Math.max(Math.round(qrScans * random.float(0.05, 0.12)), 1);
       conference.costUsd = random.int(12, 48) * 100;
       talkBumps.push(date);

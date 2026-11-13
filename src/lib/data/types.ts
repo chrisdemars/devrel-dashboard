@@ -59,6 +59,8 @@ export interface Conference {
   cfpStatus: CfpStatus;
   estAudience?: number;
   qrScans?: number;
+  /** Site sessions that arrived through this conference's UTM link. */
+  siteVisits?: number;
   leadsToSales?: number;
   costUsd?: number;
   tags: string[];
