@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getOverview } from '@/lib/dashboards/overview';
 import { sampleDataFromConfig } from '@/lib/data';
+import { daysBetween } from '@/lib/data/dates';
 import { createSampleStore } from '@/lib/data/sample/store';
 import { parseFilters, type FilterContext } from '@/lib/filters';
 
@@ -69,7 +70,7 @@ describe('getOverview', () => {
   });
 
   it('counts the days to or since the launch', async () => {
-    expect((await overview('')).launch).toEqual({ ...launch, daysAway: -90 });
+    expect((await overview('')).launch).toEqual({ ...launch, daysAway: daysBetween(data.range.to, data.launchDate) });
     expect((await getOverview(store, parseFilters({}, context), context)).launch).toBeUndefined();
   });
 

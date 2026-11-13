@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chartBucketDays, getLaunch, labelFor } from '@/lib/dashboards/launch';
 import { sampleDataFromConfig } from '@/lib/data';
+import { addDays } from '@/lib/data/dates';
 import { createSampleStore } from '@/lib/data/sample/store';
 import { parseFilters, type FilterContext } from '@/lib/filters';
 
@@ -37,25 +38,26 @@ describe('getLaunch', () => {
   });
 
   it('stacks installs by channel, and the columns add up to the total', async () => {
-    const { installs } = await launch('');
+    // Exactly four weeks ending today, so no day falls outside a column.
+    const { installs } = await launch(`range=custom&from=${addDays(data.range.to, -27)}&to=${data.range.to}`);
     expect(installs.bucket).toBe('week');
     expect(installs.series.map((s) => s.key)).toEqual(['npm', 'homebrew', 'github', 'docker']);
     const sum = installs.rows.flatMap((row) => Object.values(row.values)).reduce((a, b) => a + b, 0);
-    // Since baseline is exactly 13 weeks in the sample data, so no day is left out.
     expect(sum).toBe(installs.total);
   });
 
   it('keeps each channel’s color whatever the filters', async () => {
     const colors = async (query: string) =>
       Object.fromEntries((await launch(query)).installs.series.map((s) => [s.key, s.colorIndex]));
-    expect(await colors('range=month')).toEqual(await colors(''));
+    expect(await colors('range=quarter')).toEqual(await colors(''));
     expect((await colors('')).docker).toBe(4);
   });
 
   it('switches to daily columns for a short range', async () => {
-    const { installs } = await launch('range=month');
+    // Ten days ending today, so it holds whatever launch date the org config sets.
+    const { installs } = await launch(`range=custom&from=${addDays(data.range.to, -9)}&to=${data.range.to}`);
     expect(installs.bucket).toBe('day');
-    expect(installs.rows).toHaveLength(15);
+    expect(installs.rows).toHaveLength(10);
   });
 
   it('compares against the selected period or target', async () => {
@@ -74,7 +76,7 @@ describe('getLaunch', () => {
   });
 
   it('shows zeros, not errors, for a period before the launch', async () => {
-    const before = await launch('range=custom&from=2026-09-01&to=2026-10-31');
+    const before = await launch(`range=custom&from=${data.range.from}&to=${addDays(data.launchDate, -1)}`);
     expect(before.kpis.map((kpi) => kpi.value)).toEqual(['0', '0', '–', '0']);
     expect(before.installs).toMatchObject({ total: 0, caption: 'No installs in this period.', series: [] });
     expect(before.funnel?.steps[1].share).toBe(0);
