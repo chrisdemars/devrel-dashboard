@@ -123,6 +123,20 @@ export function sparklineValues(
   return metricBuckets(points, metric, { from, to }, days).map((bucket) => bucket.value);
 }
 
+/**
+ * Dated amounts (deal values, the reach of each activity) added up in equal
+ * buckets, lined up with the end of the range like `metricBuckets`.
+ */
+export function sumBuckets(items: { date: string; value: number }[], range: DateRange, days = 7): Bucket[] {
+  const points = items.map(({ date, value }) => ({ date, value, metric: 'installs' as const, source: '' }));
+  return metricBuckets(points, 'installs', range, days);
+}
+
+/** A bucket size that draws a range as about 12 points: a day for two weeks, a week for a quarter. */
+export function trendBucketDays(range: DateRange, points = 12): number {
+  return Math.max(Math.ceil(rangeDays(range) / points), 1);
+}
+
 /** Running total: [1, 2, 3] → [1, 3, 6]. For "total installs so far" lines. */
 export function cumulative(values: number[]): number[] {
   let total = 0;

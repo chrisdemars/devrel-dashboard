@@ -12,6 +12,10 @@ interface KpiTileProps {
   delta?: number;
   /** What the change is measured against, e.g. "vs last quarter". */
   deltaLabel?: string;
+  /** A line shown when there is no change to show, e.g. "77% of the Q1 target" or "New since the baseline". */
+  detail?: string;
+  /** Progress toward a target as a fraction (0.77). Drawn as a bar; say the same in `detail`. */
+  progress?: number;
   /** Which direction is good. Use 'down' for costs. */
   goodWhen?: 'up' | 'down';
   /** Values over time, oldest first. */
@@ -25,7 +29,18 @@ const ARROW = { up: '▲', down: '▼', flat: '●' } as const;
 const TONE = { positive: 'text-positive', negative: 'text-negative', neutral: 'text-muted' } as const;
 
 /** One headline number with its change, trend and "so what" line. */
-export function KpiTile({ label, value, delta, deltaLabel, goodWhen = 'up', trend, note, className }: KpiTileProps) {
+export function KpiTile({
+  label,
+  value,
+  delta,
+  deltaLabel,
+  detail,
+  progress,
+  goodWhen = 'up',
+  trend,
+  note,
+  className,
+}: KpiTileProps) {
   const change = delta === undefined ? undefined : describeDelta(delta, goodWhen);
 
   return (
@@ -49,7 +64,14 @@ export function KpiTile({ label, value, delta, deltaLabel, goodWhen = 'up', tren
           {deltaLabel && <span className="text-muted"> {deltaLabel}</span>}
         </p>
       )}
-      {note && <p className="border-t border-line pt-3 text-sm text-muted">{note}</p>}
+      {progress !== undefined && Number.isFinite(progress) && (
+        // Decorative: `detail` says the same in words.
+        <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-raised">
+          <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(Math.max(progress, 0), 1) * 100}%` }} />
+        </div>
+      )}
+      {detail && <p className="text-sm text-muted">{detail}</p>}
+      {note && <p className="mt-auto border-t border-line pt-3 text-sm text-muted">{note}</p>}
     </Card>
   );
 }
