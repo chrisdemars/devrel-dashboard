@@ -77,7 +77,7 @@ describe('contrastRatio', () => {
 });
 
 describe('formatUsd', () => {
-  it('prints whole dollars under 10,000 and compact amounts above, with no padding zero', () => {
+  test('prints whole dollars under 10,000 and compact amounts above, with no padding zero', () => {
     expect(formatUsd(0)).toBe('$0');
     expect(formatUsd(950)).toBe('$950');
     expect(formatUsd(9_999)).toBe('$9,999');
@@ -89,12 +89,12 @@ describe('formatUsd', () => {
 });
 
 describe('formatDay and formatDayRange', () => {
-  it('prints dates in UTC, whatever the machine’s time zone', () => {
+  test('prints dates in UTC, whatever the machine’s time zone', () => {
     expect(formatDay('2026-12-15')).toBe('Dec 15, 2026');
     expect(formatDay('2027-01-01')).toBe('Jan 1, 2027');
   });
 
-  it('prints one date for a single day and both ends otherwise', () => {
+  test('prints one date for a single day and both ends otherwise', () => {
     expect(formatDayRange('2027-01-10', '2027-01-10')).toBe('Jan 10, 2027');
     expect(formatDayRange('2026-12-15', '2027-03-15')).toBe('Dec 15, 2026 – Mar 15, 2027');
   });
