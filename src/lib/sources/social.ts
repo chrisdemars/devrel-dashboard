@@ -1,6 +1,7 @@
 // Social, video and livestream sources.
 
-import { env, envList, getJson, STATUS, type Source } from './core';
+import { env, envList, getJson, type Source } from './core';
+import { metricool } from './metricool';
 
 interface YoutubeChannels {
   items?: {
@@ -38,33 +39,13 @@ export const youtube: Source = {
   },
 };
 
-// Metricool covers X, LinkedIn, YouTube, Twitch and Facebook.
-// Its API needs the Advanced plan or above.
-export const metricool: Source = {
-  id: 'metricool',
-  name: 'Metricool (X, LinkedIn, YouTube, Twitch, Facebook)',
-  category: 'social',
-  env: [
-    { name: 'METRICOOL_API_TOKEN', required: true, help: 'Metricool > Settings > API: user token' },
-    { name: 'METRICOOL_USER_ID', required: true, help: 'Metricool user ID (shown with the API token)' },
-    { name: 'METRICOOL_BLOG_ID', required: true, help: 'Metricool brand ID ("blogId") for your brand' },
-  ],
-  async collect() {
-    // TODO: confirm the endpoints in Metricool's API docs and pull per-network
-    // followers, reach, engagement and per-stream viewers.
-    return {
-      status: STATUS.PLACEHOLDER,
-      note: "Credentials found, but the Metricool connector is not written yet. Confirm the API endpoints in Metricool's docs, then implement collect() in src/lib/sources/social.ts.",
-    };
-  },
-};
-
 export const facebook: Source = {
   id: 'facebook',
   name: 'Facebook page',
   category: 'social',
-  placeholder: 'No access yet. Connect Facebook to Metricool, or log a monthly export in data/manual/facebook-export.csv.',
+  placeholder: 'No direct connector. Connect the Facebook page to your Metricool brand (the Metricool source then reports it), or log a monthly export in data/manual/facebook-export.csv.',
 };
 
 const social: Source[] = [youtube, metricool, facebook];
 export default social;
+export { metricool };

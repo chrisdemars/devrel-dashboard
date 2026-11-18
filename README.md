@@ -192,7 +192,7 @@ With `--qr`, the QR code is written as an SVG file to `data/qr/<campaign>-<chann
 | CLI | Other package managers | Manual log: `other-package-installs.csv` |
 | Web | GA4 | Service account. Setup steps are in `src/lib/sources/ga4.ts` |
 | Social | YouTube | Data API key and channel IDs |
-| Social | Metricool | Credentials are read, but the connector is still a stub |
+| Social | Metricool | API token, user ID and brand ID. Pulls followers, impressions, reach and interactions for every network on the brand (Advanced plan or above) |
 | Social | Facebook | Placeholder, or the manual `facebook-export.csv` |
 | Business | CRM, product usage, product sign-ups | Placeholders until access is granted |
 | Manual | Followers, conferences, content multiplier, sales-flagged deals, cross-team work, declined requests | CSV logs |
