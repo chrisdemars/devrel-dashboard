@@ -81,3 +81,36 @@ describe('getOverview', () => {
     expect(sources.byStatus.every((row) => row.count > 0)).toBe(true);
   });
 });
+
+describe('social and video on the Overview', () => {
+  it('shows followers, impressions, interactions and video views, matching the metric totals', async () => {
+    const { getOverview } = await import('@/lib/dashboards/overview');
+    const { createSampleStore } = await import('@/lib/data/sample/store');
+    const { sampleDataFromConfig } = await import('@/lib/data');
+    const { parseFilters } = await import('@/lib/filters');
+    const { metricTotal } = await import('@/lib/metrics');
+    const { formatNumber } = await import('@/lib/format');
+    const data = sampleDataFromConfig();
+    const context = { dataFrom: data.range.from, today: data.range.to, launchDate: data.launchDate };
+    const filters = parseFilters(new URLSearchParams(''), context);
+    const range = { from: filters.from, to: filters.to };
+    const { social } = await getOverview(createSampleStore(data), filters, context);
+    expect(social.map((kpi) => kpi.id)).toEqual(['followers', 'social_impressions', 'social_interactions', 'video_views']);
+    for (const kpi of social) {
+      expect(kpi.value).toBe(formatNumber(metricTotal(data.metricPoints, kpi.id as never, range)));
+      expect(kpi.tagged).toBe(false);
+      expect(kpi.note).not.toMatch(/^No /);
+    }
+    expect(social[1].note).toMatch(/^(LinkedIn|X) brings \d+%/);
+  });
+
+  it('is left out when nothing social has been collected', async () => {
+    const { getOverview } = await import('@/lib/dashboards/overview');
+    const { createLocalStore } = await import('@/lib/data/local/store');
+    const { parseFilters } = await import('@/lib/filters');
+    const context = { dataFrom: '2026-11-20', today: '2026-11-20' };
+    const store = createLocalStore({ points: [], lastCollected: {} }, [], '2026-11-20');
+    const { social } = await getOverview(store, parseFilters(new URLSearchParams(''), context), context);
+    expect(social).toEqual([]);
+  });
+});

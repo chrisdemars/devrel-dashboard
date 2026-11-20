@@ -5,6 +5,7 @@ import { Card, Eyebrow, Headline, KpiTile, StatusPill } from '@/components/ui';
 import config from '@/lib/config';
 import { getOverview, type Overview } from '@/lib/dashboards/overview';
 import { getDataStore } from '@/lib/data';
+import { filterHref } from '@/lib/filters';
 import { getFilters } from '@/lib/filters/server';
 import { formatDay, formatNumber } from '@/lib/format';
 
@@ -45,6 +46,24 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/'>, 'searchParams'>)
         ))}
         {overview.launch && <LaunchCountdown launch={overview.launch} />}
       </section>
+
+      {overview.social.length > 0 && (
+        <section aria-labelledby="social-heading" className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="social-heading" className="text-lg font-semibold">
+              Social and video
+            </h2>
+            <Link href={filterHref('/streams', filters)} className="text-sm text-accent hover:underline print:hidden">
+              By platform on {config.pages.streams} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {overview.social.map(({ id, label, tagged, ...kpi }) => (
+              <KpiTile key={id} label={tagged && filters.tags.length > 0 ? `${label} · filtered by tag` : label} {...kpi} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <SourceSummary sources={overview.sources} />
     </>

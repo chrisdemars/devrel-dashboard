@@ -19,7 +19,7 @@ import {
   trendBucketDays,
 } from '../metrics';
 import type { SourceStatus } from '../sources/core';
-import { dealBuckets } from './shared';
+import { dealBuckets, labelFor } from './shared';
 import { standing } from './standing';
 
 export interface OverviewKpi {
@@ -43,6 +43,8 @@ export interface OverviewKpi {
 
 export interface Overview {
   kpis: OverviewKpi[];
+  /** Audience and attention on social and video platforms. Empty when nothing has been collected. */
+  social: OverviewKpi[];
   launch?: { label: string; date: string; /** Days from today; negative once it has happened. */ daysAway: number };
   sources: { total: number; byStatus: { status: SourceStatus; count: number }[] };
 }
@@ -193,8 +195,52 @@ export async function getOverview(
     },
   ];
 
+  // ---- Social and video ----
+  const followers = metricTotal(points, 'followers', range);
+  const impressions = metricTotal(points, 'social_impressions', range);
+  const interactions = metricTotal(points, 'social_interactions', range);
+  const views = metricTotal(points, 'video_views', range);
+  const top = (metric: MetricName) => metricBreakdown(points, metric, 'platform', range)[0];
+  const [biggestAudience] = metricBreakdown(points, 'followers', 'platform', range);
+  const topImpressions = top('social_impressions');
+  const topViews = top('video_views');
+  const social: OverviewKpi[] =
+    followers + impressions + interactions + views > 0
+      ? [
+          metricKpi(
+            'followers',
+            'Followers, all platforms',
+            biggestAudience && followers > 0
+              ? `${labelFor(biggestAudience.key)} is the largest audience, with ${formatNumber(biggestAudience.value)}.`
+              : 'No follower counts collected yet.',
+          ),
+          metricKpi(
+            'social_impressions',
+            'Social impressions',
+            topImpressions && impressions > 0
+              ? `${labelFor(topImpressions.key)} brings ${formatPercent(topImpressions.share)} of them.`
+              : 'No impressions in this period.',
+          ),
+          metricKpi(
+            'social_interactions',
+            'Social interactions',
+            impressions > 0 && interactions > 0
+              ? `${formatPercent(interactions / impressions)} of impressions lead to a like, comment, share or click.`
+              : 'No interactions in this period.',
+          ),
+          metricKpi(
+            'video_views',
+            'Video views',
+            topViews && views > 0
+              ? `${formatNumber(Math.round(views / rangeDays(range)))} a day on average, most on ${labelFor(topViews.key)}.`
+              : 'No video views in this period.',
+          ),
+        ]
+      : [];
+
   return {
     kpis,
+    social,
     ...(launch && { launch: { ...launch, daysAway: daysBetween(context.today, launch.date) } }),
     sources: sourceSummary(statuses),
   };
