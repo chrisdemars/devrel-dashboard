@@ -355,6 +355,20 @@ export function generateSampleData(options: SampleOptions): SampleData {
       point(day, 'followers', followers[platform], 'follower-counts', { platform });
     }
   }
+  // Daily social numbers follow the audience. No random draws here, so the rest of the sample stays the same.
+  const SOCIAL_RATE = { x: 0.09, linkedin: 0.16, youtube: 0, twitch: 0 } as Record<string, number>;
+  days.forEach((day, d) => {
+    const growth = 1 + d * 0.0012 * (launched(day) ? 1.6 : 1);
+    const wave = 1 + 0.25 * Math.sin(d / 3);
+    for (const [platform, base] of Object.entries(FOLLOWERS)) {
+      const impressions = base * (SOCIAL_RATE[platform] ?? 0) * growth * wave * weekdayFactor(day);
+      if (impressions > 0) {
+        point(day, 'social_impressions', impressions, 'metricool', { platform });
+        point(day, 'social_interactions', impressions * 0.035, 'metricool', { platform });
+      }
+    }
+    point(day, 'video_views', 260 * growth * wave * weekdayFactor(day), 'metricool', { platform: 'youtube' });
+  });
 
   // ---- Deals sales linked to DevRel ----
   const given = conferences.filter((c) => c.cfpStatus === 'given');

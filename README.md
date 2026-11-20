@@ -86,11 +86,14 @@ Pages read everything through one interface, `DataStore` in `src/lib/data/types.
 | `DATA_MODE` | What you get |
 |---|---|
 | `sample` (default) | Generated data for a fictional organization. No setup, and a "Sample data" badge in the navigation |
+| `local` | The real numbers `npm run collect` has saved in `data/snapshots/`, on this machine only. No database needed |
 | `supabase` | Your own data in your own Supabase project. Not available yet |
 
 The sample data covers seven months around the launch date in your config (four before, three after): a blog post every two weeks with the short, livestream and social posts made from it, conference talks with costs and leads, installs that ramp up after launch, site traffic and key events, followers, deals, cross-team work, declined requests, targets and report notes. It uses your config's tags and key event names.
 
 It is generated from a fixed seed, so it is identical on every run and on every machine. Nothing in it is real. The dashboards treat the last day of the sample data as "today".
+
+**Local mode.** `DATA_MODE=local` shows only what the collector has gathered: follower counts, social impressions, interactions and video views, by platform. Nothing is made up, so activities, events, deals and targets stay empty until they have a real home, and pages show "no data" or "access needed" in their place. Each run of `npm run collect` adds a dated snapshot; the dashboard picks up a new one without a restart. To start with history instead of the last four weeks, run the collector once with a longer look-back, e.g. `COLLECT_LOOKBACK_DAYS=730 npm run collect`. Metricool can go back about two years.
 
 ## Theme
 The dashboard is dark by default, with a light theme behind the toggle in the navigation. Printing always uses the light theme. Open `/styleguide` to see every color token and building block in both themes.

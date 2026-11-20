@@ -231,7 +231,7 @@ describe('DATA_MODE', () => {
 
   test('an unknown value names the valid ones', () => {
     process.env.DATA_MODE = 'postgres';
-    expect(() => dataMode()).toThrow('DATA_MODE is "postgres". Use one of: sample, supabase.');
+    expect(() => dataMode()).toThrow('DATA_MODE is "postgres". Use one of: sample, local, supabase.');
   });
 
   test('supabase is not available yet and says so', () => {
