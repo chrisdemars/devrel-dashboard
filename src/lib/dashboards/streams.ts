@@ -51,8 +51,22 @@ export interface FollowerRow {
   change?: number;
 }
 
+export interface SocialRow {
+  key: string;
+  label: string;
+  followers: number;
+  impressions: number;
+  interactions: number;
+  /** Interactions per impression. Undefined without impressions. */
+  rate?: number;
+  /** Video views, for video platforms. */
+  views: number;
+}
+
 export interface Streams {
   kpis: StreamsKpi[];
+  /** Day-to-day social numbers per platform: what posts were shown and what people did with them. */
+  social: { series: ChartSeries[]; rows: ChartRow[]; table: SocialRow[]; impressions: number; caption: string };
   streams: { rows: StreamRow[]; caption: string };
   platforms: { rows: PlatformRow[]; caption: string };
   followers: { series: ChartSeries[]; rows: ChartRow[]; table: FollowerRow[]; caption: string };
@@ -183,6 +197,40 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
   const followers = metricTotal(followerPoints, 'followers', { to: range.to });
   const fastest = [...table].filter((row) => row.change !== undefined).sort((a, b) => b.change! - a.change!)[0];
 
+  // ---- Social: impressions, interactions and video views per platform ----
+  const platformOf = (point: { dimensions?: Record<string, string> }) => point.dimensions?.platform ?? 'unknown';
+  const socialPoints = points.filter((point) => ['social_impressions', 'social_interactions', 'video_views'].includes(point.metric));
+  const socialSeen = socialPoints.map(platformOf);
+  const own = (metric: 'social_impressions' | 'social_interactions' | 'video_views', key: string) =>
+    metricTotal(socialPoints.filter((point) => platformOf(point) === key), metric, range);
+  const socialTable: SocialRow[] = [...new Set([...socialSeen, ...table.map((row) => row.key)])]
+    .map((key) => {
+      const impressions = own('social_impressions', key);
+      const interactions = own('social_interactions', key);
+      return {
+        key,
+        label: labelFor(key),
+        followers: table.find((row) => row.key === key)?.end ?? 0,
+        impressions,
+        interactions,
+        ...(impressions > 0 && { rate: interactions / impressions }),
+        views: own('video_views', key),
+      };
+    })
+    .filter((row) => row.impressions > 0 || row.interactions > 0 || row.views > 0)
+    .sort((a, b) => b.impressions - a.impressions || b.views - a.views || a.label.localeCompare(b.label));
+  const shown = socialTable.filter((row) => row.impressions > 0);
+  const socialSeries = seriesFor(PLATFORMS, shown.map((row) => row.key), socialSeen);
+  const impressionBuckets = socialSeries.map(({ key }) =>
+    metricBuckets(socialPoints.filter((point) => platformOf(point) === key), 'social_impressions', range, 7),
+  );
+  const socialRows: ChartRow[] = (impressionBuckets[0] ?? []).map((bucket, i) => ({
+    ...rowLabels(bucket),
+    values: Object.fromEntries(socialSeries.map(({ key }, k) => [key, impressionBuckets[k][i].value])),
+  }));
+  const impressions = shown.reduce((sum, row) => sum + row.impressions, 0);
+  const engaging = [...shown].filter((row) => row.rate !== undefined && row.impressions >= 100).sort((a, b) => b.rate! - a.rate!)[0];
+
   const best = platforms[0];
   const biggest = [...rows].sort((a, b) => watched(b) - watched(a))[0];
   const reported = new Set([...platformKeys, ...everSeen]);
@@ -237,6 +285,18 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
 
   return {
     kpis,
+    social: {
+      series: socialSeries,
+      rows: socialRows,
+      table: socialTable,
+      impressions,
+      caption:
+        shown.length === 0
+          ? 'No social numbers collected for this period.'
+          : `${shown[0].label} shows posts to the most people: ${formatNumber(shown[0].impressions)} of ${formatNumber(impressions)} impressions.${
+              engaging ? ` ${engaging.label} gets the most interaction per impression (${formatPercent(engaging.rate!)}).` : ''
+            }`,
+    },
     streams: {
       rows,
       caption: biggest

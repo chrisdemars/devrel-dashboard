@@ -3,7 +3,7 @@
 
 import type { DataMode } from './types';
 
-const MODES: DataMode[] = ['sample', 'supabase'];
+const MODES: DataMode[] = ['sample', 'local', 'supabase'];
 
 /** The active data mode, from the DATA_MODE environment variable. */
 export function dataMode(): DataMode {
