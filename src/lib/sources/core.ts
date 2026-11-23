@@ -25,7 +25,7 @@ export interface EnvVar {
   required?: boolean;
   help: string;
   /**
-   * Dotted path of the matching list in devrel.config.ts, e.g. 'packages.npm'.
+   * Dotted path of the matching list in devrel.config.ts, e.g. 'ga4.keyEvents'.
    * The config holds the usual value; the .env variable overrides it when set.
    */
   config?: string;
@@ -90,7 +90,7 @@ export function listSetting(source: Source, name: string): string[] {
   return Array.isArray(fromConfig) ? fromConfig.map(String) : [];
 }
 
-/** How a setting is named in messages, e.g. "packages.npm in devrel.config.ts (or CLI_NPM_PACKAGES in .env)". */
+/** How a setting is named in messages, e.g. "ga4.keyEvents in devrel.config.ts (or GA4_KEY_EVENTS in .env)". */
 function label(e: EnvVar): string {
   return e.config ? `${e.config} in devrel.config.ts (or ${e.name} in .env)` : e.name;
 }

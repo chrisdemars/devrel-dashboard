@@ -2,6 +2,7 @@
 // does for other teams, the requests it turns down, and what one more person
 // would add at today's averages.
 
+import type { Attribution } from '../attribution';
 import { inRange } from '../data/dates';
 import type { Activity, DataStore, DateRange, DeclinedRequest } from '../data/types';
 import { comparisonRange, toDataFilter, type FilterContext, type Filters } from '../filters';
@@ -20,6 +21,8 @@ import { bucketName, chartBucketDays, labelFor, rowLabels, seriesFor, type Chart
 import { standing, type Standing } from './standing';
 
 export interface CapacityKpi extends Standing {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   value: string;
@@ -187,7 +190,7 @@ export async function getCapacity(
     },
     {
       id: 'key_events',
-      label: 'Key events on the site',
+      label: 'Key events from DevRel links',
       current: projection.current * keyEventsEach,
       projected: projection.current * keyEventsEach + projection.addedOutcomes.keyEvents,
     },
@@ -207,6 +210,7 @@ export async function getCapacity(
   const kpis: CapacityKpi[] = [
     {
       id: 'output',
+      attribution: 'produced',
       label: `Pieces of work per ${PER_DAYS} days`,
       value: formatRate(outputPer30),
       ...against(output.length, previousOutput.length),
@@ -215,6 +219,7 @@ export async function getCapacity(
     },
     {
       id: 'posts',
+      attribution: 'produced',
       label: `Blog posts per ${PER_DAYS} days`,
       value: formatRate(postsPer30),
       ...against(ofType(activities, 'blog').length, ofType(previousActivities, 'blog').length),
@@ -226,6 +231,7 @@ export async function getCapacity(
     },
     {
       id: 'cross_team',
+      attribution: 'produced',
       label: 'Contributions to other teams',
       value: formatNumber(crossTeam.length),
       ...against(crossTeam.length, ofType(previousActivities, 'cross-team').length),
@@ -237,6 +243,7 @@ export async function getCapacity(
     },
     {
       id: 'declined',
+      attribution: 'produced',
       label: 'Requests turned down',
       value: formatNumber(declinedRows.length),
       ...against(declinedRows.length, previousDeclined),

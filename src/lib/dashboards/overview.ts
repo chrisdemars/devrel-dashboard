@@ -2,6 +2,7 @@
 // All the arithmetic lives in src/lib/metrics; this file only decides what
 // to show and how to word it.
 
+import type { Attribution } from '../attribution';
 import { daysBetween, quarterOf } from '../data/dates';
 import type { DataStore, DateRange, MetricName, SourceStatusInfo, Target } from '../data/types';
 import { comparisonRange, toDataFilter, type FilterContext, type Filters } from '../filters';
@@ -19,10 +20,12 @@ import {
   trendBucketDays,
 } from '../metrics';
 import type { SourceStatus } from '../sources/core';
-import { dealBuckets, labelFor } from './shared';
+import { dealBuckets } from './shared';
 import { standing } from './standing';
 
 export interface OverviewKpi {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   /** Already formatted, e.g. "12.9K" or "$84K". */
@@ -43,8 +46,6 @@ export interface OverviewKpi {
 
 export interface Overview {
   kpis: OverviewKpi[];
-  /** Audience and attention on social and video platforms. Empty when nothing has been collected. */
-  social: OverviewKpi[];
   launch?: { label: string; date: string; /** Days from today; negative once it has happened. */ daysAway: number };
   sources: { total: number; byStatus: { status: SourceStatus; count: number }[] };
 }
@@ -97,6 +98,7 @@ export async function getOverview(
     return {
       id,
       label,
+      attribution: 'tracked',
       value: formatNumber(metricTotal(points, id, range)),
       ...standing(filters, compareWith && compareMetric(points, id, range, compareWith), {
         actual: metricTotal(points, id, quarterSoFar),
@@ -132,21 +134,21 @@ export async function getOverview(
   const kpis: OverviewKpi[] = [
     metricKpi(
       'installs',
-      'Product installs',
+      'Installs from DevRel links',
       topChannel && installs > 0
-        ? `${topChannel.key} brings ${formatPercent(topChannel.share)} of installs.`
+        ? `${topChannel.key} brings ${formatPercent(topChannel.share)} of them.`
         : 'No installs in this period.',
     ),
     metricKpi(
       'activations',
-      'Activations',
+      'Activations from DevRel links',
       installs > 0
         ? `${formatPercent(activations / installs)} of installs go on to a first real use.`
         : 'No activations in this period.',
     ),
     metricKpi(
       'key_events',
-      'Key events on the site',
+      'Key events from DevRel links',
       topEvent && topEvent.value > 0
         ? `${topEvent.key} is the most common, with ${formatNumber(topEvent.value)}.`
         : 'No key events in this period.',
@@ -154,6 +156,7 @@ export async function getOverview(
     {
       id: 'influenced_pipeline_usd',
       label: 'Influenced pipeline',
+      attribution: 'influenced',
       value: formatUsd(dealTotals.amountUsd),
       ...standing(
         filters,
@@ -178,6 +181,7 @@ export async function getOverview(
     {
       id: 'reach',
       label: 'Audience reached',
+      attribution: 'direct',
       value: formatNumber(reachTotal),
       ...standing(
         filters,
@@ -195,52 +199,8 @@ export async function getOverview(
     },
   ];
 
-  // ---- Social and video ----
-  const followers = metricTotal(points, 'followers', range);
-  const impressions = metricTotal(points, 'social_impressions', range);
-  const interactions = metricTotal(points, 'social_interactions', range);
-  const views = metricTotal(points, 'video_views', range);
-  const top = (metric: MetricName) => metricBreakdown(points, metric, 'platform', range)[0];
-  const [biggestAudience] = metricBreakdown(points, 'followers', 'platform', range);
-  const topImpressions = top('social_impressions');
-  const topViews = top('video_views');
-  const social: OverviewKpi[] =
-    followers + impressions + interactions + views > 0
-      ? [
-          metricKpi(
-            'followers',
-            'Followers, all platforms',
-            biggestAudience && followers > 0
-              ? `${labelFor(biggestAudience.key)} is the largest audience, with ${formatNumber(biggestAudience.value)}.`
-              : 'No follower counts collected yet.',
-          ),
-          metricKpi(
-            'social_impressions',
-            'Social impressions',
-            topImpressions && impressions > 0
-              ? `${labelFor(topImpressions.key)} brings ${formatPercent(topImpressions.share)} of them.`
-              : 'No impressions in this period.',
-          ),
-          metricKpi(
-            'social_interactions',
-            'Social interactions',
-            impressions > 0 && interactions > 0
-              ? `${formatPercent(interactions / impressions)} of impressions lead to a like, comment, share or click.`
-              : 'No interactions in this period.',
-          ),
-          metricKpi(
-            'video_views',
-            'Video views',
-            topViews && views > 0
-              ? `${formatNumber(Math.round(views / rangeDays(range)))} a day on average, most on ${labelFor(topViews.key)}.`
-              : 'No video views in this period.',
-          ),
-        ]
-      : [];
-
   return {
     kpis,
-    social,
     ...(launch && { launch: { ...launch, daysAway: daysBetween(context.today, launch.date) } }),
     sources: sourceSummary(statuses),
   };

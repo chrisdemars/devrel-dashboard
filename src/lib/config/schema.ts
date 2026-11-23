@@ -96,17 +96,16 @@ export const configSchema = z.strictObject({
     })
     .prefault({}),
 
-  /** Public package and repo names to track. No credentials needed. */
-  packages: z
+  attribution: z
     .strictObject({
-      npm: list,
-      homebrewFormulae: list,
-      homebrewCasks: list,
-      pypi: list,
-      /** namespace/repo on Docker Hub. */
-      docker: list,
-      /** owner/repo on GitHub. */
-      github: list,
+      /**
+       * The utm_campaign prefix that marks a link as DevRel's. Every link from
+       * `npm run utm` starts with it, and only visits, key events and sign-ups
+       * carrying it are counted. No other team should use it.
+       */
+      campaignPrefix: text
+        .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'must be lowercase letters and numbers, with hyphens between words')
+        .default('devrel'),
     })
     .prefault({}),
 

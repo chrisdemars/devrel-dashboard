@@ -10,7 +10,7 @@ import { labelFor } from '@/lib/dashboards/shared';
 import { getStreams, type Streams } from '@/lib/dashboards/streams';
 import { getDataStore } from '@/lib/data';
 import { getFilters } from '@/lib/filters/server';
-import { describeDelta, formatDay, formatNumber, formatPercent } from '@/lib/format';
+import { describeDelta, formatDay, formatNumber } from '@/lib/format';
 
 export const metadata: Metadata = { title: config.pages.streams };
 
@@ -31,7 +31,7 @@ export default function StreamsPage({ searchParams }: PageProps<'/streams'>) {
 
 async function Dashboard({ searchParams }: Pick<PageProps<'/streams'>, 'searchParams'>) {
   const { filters, context } = await getFilters(searchParams);
-  const { kpis, social, streams, platforms, followers, missingPlatforms } = await getStreams(getDataStore(), filters, context);
+  const { kpis, streams, platforms, followers, missingPlatforms } = await getStreams(getDataStore(), filters, context);
   const tagged = filters.tags.length > 0;
 
   return (
@@ -40,8 +40,8 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/streams'>, 'searchPa
         <FilterBar filters={filters} context={context} />
         {tagged && (
           <p className="text-sm text-muted">
-            Tags narrow the livestreams and their viewers (marked “filtered by tag”). Follower counts are not tagged,
-            so they cover everything.
+            Tags narrow the livestreams and their viewers (marked “filtered by tag”). Follower counts are not tagged:
+            they cover the accounts DevRel runs.
           </p>
         )}
       </div>
@@ -51,29 +51,6 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/streams'>, 'searchPa
           <KpiTile key={id} label={byTag && tagged ? `${label} · filtered by tag` : label} {...kpi} />
         ))}
       </section>
-
-      <ChartCard
-        title={`Social impressions per week: ${formatNumber(social.impressions)} in all`}
-        caption={social.caption}
-        legend={social.series}
-        table={{
-          columns: ['Platform', 'Followers', 'Impressions', 'Interactions', 'Interaction rate', 'Video views'],
-          rows: social.table.map((row) => [
-            row.label,
-            row.followers > 0 ? formatNumber(row.followers) : '–',
-            row.impressions > 0 ? formatNumber(row.impressions) : '–',
-            row.interactions > 0 ? formatNumber(row.interactions) : '–',
-            row.rate === undefined ? '–' : formatPercent(row.rate),
-            row.views > 0 ? formatNumber(row.views) : '–',
-          ]),
-        }}
-      >
-        {social.rows.length > 0 && social.impressions > 0 ? (
-          <TimeChart kind="columns" series={social.series} rows={social.rows} label="Social impressions per week, by platform" />
-        ) : (
-          <ChartEmpty>{social.table.length > 0 ? 'Pick a range of a week or more to see the trend.' : 'No social numbers collected for this period.'}</ChartEmpty>
-        )}
-      </ChartCard>
 
       <StreamTable streams={streams} tagged={tagged} />
 
@@ -108,7 +85,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/streams'>, 'searchPa
       </div>
 
       <ChartCard
-        title="Followers by platform"
+        title="Followers on DevRel-run accounts"
         caption={followers.caption}
         legend={followers.series}
         mark="line"

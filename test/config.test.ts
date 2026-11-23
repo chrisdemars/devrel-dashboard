@@ -28,7 +28,7 @@ describe('parseConfig', () => {
     expect(config).toMatchObject({
       theme: { preset: 'default', fonts: { stylesheets: [] } },
       sources: { enabled: 'all' },
-      packages: { npm: [], homebrewFormulae: [], homebrewCasks: [], pypi: [], docker: [], github: [] },
+      attribution: { campaignPrefix: 'devrel' },
       ga4: { keyEvents: [] },
       team: { people: 1 },
       pages: PAGE_LABELS,
@@ -58,14 +58,14 @@ describe('parseConfig', () => {
       problems({
         org: { name: 'Acme', url: 'example.com' },
         launch: { date: '12/15/2026', label: 'Launch' },
-        packages: { npm: '@acme/cli' },
+        attribution: { campaignPrefix: 'Dev Rel' },
         sources: { enabled: 'some' },
         tags: { suggested: ['npm', 'npm'] },
       }),
     ).toEqual([
       'org.url: must be a full URL, e.g. https://example.com',
       "sources.enabled: must be 'all' or a list of source ids",
-      'packages.npm: must be an array',
+      'attribution.campaignPrefix: must be lowercase letters and numbers, with hyphens between words',
       'launch.date: must be a date like 2026-12-31',
       'tags.suggested: must not contain duplicates',
     ]);
@@ -97,11 +97,11 @@ describe('selectSources', () => {
   });
 
   test('a list keeps only those sources', () => {
-    expect(selectSources(allSources, ['github', 'npm']).map((s) => s.id)).toEqual(['npm', 'github']);
+    expect(selectSources(allSources, ['metricool', 'ga4']).map((s) => s.id)).toEqual(['ga4', 'metricool']);
   });
 
   test('an unknown id is a config error that lists the known ids', () => {
-    expect(() => selectSources(allSources, ['npm', 'npn'])).toThrow(ConfigError);
-    expect(() => selectSources(allSources, ['npm', 'npn'])).toThrow(/sources\.enabled: unknown source "npn"\. Known sources: npm, /);
+    expect(() => selectSources(allSources, ['ga4', 'npm'])).toThrow(ConfigError);
+    expect(() => selectSources(allSources, ['ga4', 'npm'])).toThrow(/sources\.enabled: unknown source "npm"\. Known sources: ga4, /);
   });
 });

@@ -1,6 +1,6 @@
 // A DataStore that answers from the snapshots `npm run collect` writes, so
 // the dashboards can show real numbers without a database. It holds only
-// what the collector gathers: metric points and source states. Activities,
+// DevRel-attributed metric points and source states. Activities,
 // conferences, deals, targets and report notes stay empty until they have a
 // real home (Supabase), so pages show their "nothing yet" and "access
 // needed" states instead of made-up numbers.
@@ -8,7 +8,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { inRange } from '../dates';
-import type { DataStore, DateRange, MetricName, MetricPoint, SourceStatusInfo } from '../types';
+import { METRICS, type DataStore, type DateRange, type MetricName, type MetricPoint, type SourceStatusInfo } from '../types';
 
 /** One snapshot file, as `npm run collect` writes it. */
 export interface LocalSnapshot {
@@ -22,72 +22,51 @@ export interface LocalData {
   lastCollected: Record<string, string>;
 }
 
-// What each Metricool series is stored as. Reach is left out: it counts the
-// same people again, so it cannot be added to impressions.
-const METRICOOL_METRICS: Record<string, MetricName> = {
-  followers: 'followers',
-  impressions: 'social_impressions',
-  interactions: 'social_interactions',
-  views: 'video_views',
-};
-
-interface DailyValue {
-  date: string;
-  value: number;
+interface PointRow {
+  date?: unknown;
+  metric?: unknown;
+  value?: unknown;
+  dimensions?: unknown;
 }
 
 const isDay = (value: unknown): value is string => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+const isMetric = (value: unknown): value is MetricName => typeof value === 'string' && (METRICS as readonly string[]).includes(value);
+
+function cleanDimensions(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const entries = Object.entries(value).filter(([, v]) => typeof v === 'string' && v !== '');
+  return entries.length ? (Object.fromEntries(entries) as Record<string, string>) : undefined;
+}
 
 /**
- * Turns snapshots into metric points. Snapshots overlap (each holds the last
+ * Turns snapshots into metric points. Only `metrics.points` is read: the rows
+ * a collector has already tied to DevRel (for GA4, visits and key events with
+ * a DevRel campaign). Anything else a collector saves, such as company-wide
+ * totals, never reaches the dashboard. Snapshots overlap (each holds the last
  * few weeks), so a later snapshot replaces the same day from an earlier one.
  */
 export function snapshotsToData(snapshots: LocalSnapshot[]): LocalData {
   const byKey = new Map<string, MetricPoint>();
   const lastCollected: Record<string, string> = {};
-  const add = (point: MetricPoint) =>
-    byKey.set(`${point.metric}|${point.date}|${point.source}|${JSON.stringify(point.dimensions ?? {})}`, point);
 
   for (const snapshot of [...snapshots].sort((a, b) => a.generatedAt.localeCompare(b.generatedAt))) {
     for (const [id, result] of Object.entries(snapshot.sources ?? {})) {
       if (result?.status !== 'ok') continue;
       lastCollected[id] = snapshot.generatedAt;
-      const metrics = result.metrics ?? {};
-
-      if (id === 'metricool') {
-        const platforms = (metrics.platforms ?? {}) as Record<string, { daily?: Record<string, DailyValue[]> }>;
-        for (const [platform, numbers] of Object.entries(platforms)) {
-          for (const [name, values] of Object.entries(numbers.daily ?? {})) {
-            const metric = METRICOOL_METRICS[name];
-            if (!metric || !Array.isArray(values)) continue;
-            for (const { date, value } of values) {
-              if (isDay(date) && Number.isFinite(value)) add({ date, metric, value, source: id, dimensions: { platform } });
-            }
-          }
-        }
-      }
-
-      if (id === 'youtube') {
-        // The YouTube API only gives today's subscriber count, so each snapshot adds one reading.
-        const channels = (metrics.channels ?? {}) as Record<string, { subscribers?: number }>;
-        const date = snapshot.generatedAt.slice(0, 10);
-        const subscribers = Object.values(channels).reduce((sum, channel) => sum + (Number(channel.subscribers) || 0), 0);
-        if (isDay(date) && subscribers > 0) add({ date, metric: 'followers', value: subscribers, source: id, dimensions: { platform: 'youtube' } });
+      const rows = result.metrics?.points;
+      if (!Array.isArray(rows)) continue;
+      for (const row of rows as PointRow[]) {
+        const value = Number(row.value);
+        if (!isDay(row.date) || !isMetric(row.metric) || !Number.isFinite(value)) continue;
+        const dimensions = cleanDimensions(row.dimensions);
+        const point: MetricPoint = { date: row.date, metric: row.metric, value, source: id, ...(dimensions && { dimensions }) };
+        byKey.set(`${point.metric}|${point.date}|${id}|${JSON.stringify(dimensions ?? {})}`, point);
       }
     }
   }
 
-  // Metricool and the YouTube API both report YouTube; keep one source per platform and metric so they are not added twice.
-  const points = [...byKey.values()];
-  const owners = new Map<string, string>();
-  for (const point of points) {
-    const key = `${point.metric}|${point.dimensions?.platform ?? ''}`;
-    if (!owners.has(key) || point.source === 'metricool') owners.set(key, point.source);
-  }
   return {
-    points: points
-      .filter((point) => owners.get(`${point.metric}|${point.dimensions?.platform ?? ''}`) === point.source)
-      .sort((a, b) => a.date.localeCompare(b.date) || a.metric.localeCompare(b.metric)),
+    points: [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date) || a.metric.localeCompare(b.metric)),
     lastCollected,
   };
 }

@@ -4,9 +4,11 @@ import {
   buildUtmUrl,
   CHANNEL_IDS,
   conferenceCampaign,
+  isDevrelCampaign,
   listChannels,
   slugify,
   UtmError,
+  withPrefix,
 } from '../src/lib/utm';
 
 const BASE = 'https://example.com/blog/post';
@@ -48,7 +50,6 @@ describe('the channel table', () => {
     x: { source: 'x', medium: 'social' },
     linkedin: { source: 'linkedin', medium: 'social' },
     facebook: { source: 'facebook', medium: 'social' },
-    blog: { source: 'blog', medium: 'referral' },
     newsletter: { source: 'newsletter', medium: 'email' },
     conference: { source: 'exampleconf-2026', medium: 'conference', content: 'slides', extra: { event: 'ExampleConf 2026' } },
     community: { source: 'discord', medium: 'community' },
@@ -63,7 +64,8 @@ describe('the channel table', () => {
     expect(params).toEqual({
       source: want.source,
       medium: want.medium,
-      campaign: 'cli-launch',
+      campaign: 'devrel-cli-launch',
+      id: 'devrel-cli-launch',
       ...(want.content && { content: want.content }),
     });
   });
@@ -83,7 +85,14 @@ describe('buildUtmParams', () => {
   test('cleans up the campaign, content and term', () => {
     expect(
       buildUtmParams({ channel: 'x', campaign: 'CLI Launch!', content: 'Pinned Post', term: 'Supply Chain' }),
-    ).toEqual({ source: 'x', medium: 'social', campaign: 'cli-launch', content: 'pinned-post', term: 'supply-chain' });
+    ).toEqual({
+      source: 'x',
+      medium: 'social',
+      campaign: 'devrel-cli-launch',
+      id: 'devrel-cli-launch',
+      content: 'pinned-post',
+      term: 'supply-chain',
+    });
   });
 
   test('accepts the channel in any case', () => {
@@ -172,7 +181,8 @@ describe('conference naming', () => {
     expect(buildUtmParams({ channel: 'conference', event: 'ExampleConf', date: '2026-06-12' })).toEqual({
       source: 'exampleconf-2026',
       medium: 'conference',
-      campaign: 'exampleconf-2026',
+      campaign: 'devrel-exampleconf-2026',
+      id: 'devrel-exampleconf-2026',
       content: 'slides',
     });
   });
@@ -180,7 +190,7 @@ describe('conference naming', () => {
   test('a campaign can be set separately from the event', () => {
     expect(
       buildUtmParams({ channel: 'conference', event: 'ExampleConf 2026', campaign: 'CLI Launch', content: 'qr' }),
-    ).toEqual({ source: 'exampleconf-2026', medium: 'conference', campaign: 'cli-launch', content: 'qr' });
+    ).toEqual({ source: 'exampleconf-2026', medium: 'conference', campaign: 'devrel-cli-launch', id: 'devrel-cli-launch', content: 'qr' });
   });
 
   test('a conference needs an event', () => {
@@ -193,16 +203,17 @@ describe('conference naming', () => {
 describe('buildUtmUrl', () => {
   test('tags a plain link', () => {
     expect(buildUtmUrl({ url: BASE, channel: 'youtube', campaign: 'cli-launch' })).toBe(
-      `${BASE}?utm_source=youtube&utm_medium=video&utm_campaign=cli-launch`,
+      `${BASE}?utm_source=youtube&utm_medium=video&utm_campaign=devrel-cli-launch&utm_id=devrel-cli-launch`,
     );
   });
 
-  test('keeps the order source, medium, campaign, content, term', () => {
+  test('keeps the order source, medium, campaign, id, content, term', () => {
     const tagged = buildUtmUrl({ url: BASE, channel: 'x', term: 'b', content: 'a', campaign: 'cli-launch' });
     expect([...new URL(tagged).searchParams.keys()]).toEqual([
       'utm_source',
       'utm_medium',
       'utm_campaign',
+      'utm_id',
       'utm_content',
       'utm_term',
     ]);
@@ -210,7 +221,7 @@ describe('buildUtmUrl', () => {
 
   test('preserves existing query parameters and the hash', () => {
     expect(buildUtmUrl({ url: `${BASE}?ref=home&q=a%20b+c#install`, channel: 'newsletter', campaign: 'cli-launch' })).toBe(
-      `${BASE}?ref=home&q=a%20b+c&utm_source=newsletter&utm_medium=email&utm_campaign=cli-launch#install`,
+      `${BASE}?ref=home&q=a%20b+c&utm_source=newsletter&utm_medium=email&utm_campaign=devrel-cli-launch&utm_id=devrel-cli-launch#install`,
     );
   });
 
@@ -220,18 +231,18 @@ describe('buildUtmUrl', () => {
       channel: 'linkedin',
       campaign: 'cli-launch',
     });
-    expect(tagged).toBe(`${BASE}?page=2&utm_source=linkedin&utm_medium=social&utm_campaign=cli-launch#top`);
+    expect(tagged).toBe(`${BASE}?page=2&utm_source=linkedin&utm_medium=social&utm_campaign=devrel-cli-launch&utm_id=devrel-cli-launch#top`);
   });
 
   test('adds a path to a bare domain', () => {
-    expect(buildUtmUrl({ url: ' https://example.com ', channel: 'blog', campaign: 'cli-launch' })).toBe(
-      'https://example.com/?utm_source=blog&utm_medium=referral&utm_campaign=cli-launch',
+    expect(buildUtmUrl({ url: ' https://example.com ', channel: 'newsletter', campaign: 'cli-launch' })).toBe(
+      'https://example.com/?utm_source=newsletter&utm_medium=email&utm_campaign=devrel-cli-launch&utm_id=devrel-cli-launch',
     );
   });
 
   test('tags a conference link', () => {
     expect(buildUtmUrl({ url: 'https://example.com/cli', channel: 'conference', event: 'ExampleConf 2026', content: 'qr' })).toBe(
-      'https://example.com/cli?utm_source=exampleconf-2026&utm_medium=conference&utm_campaign=exampleconf-2026&utm_content=qr',
+      'https://example.com/cli?utm_source=exampleconf-2026&utm_medium=conference&utm_campaign=devrel-exampleconf-2026&utm_id=devrel-exampleconf-2026&utm_content=qr',
     );
   });
 
@@ -248,5 +259,28 @@ describe('buildUtmUrl', () => {
 
   test('an unknown channel is an error', () => {
     expect(() => buildUtmUrl({ url: BASE, channel: 'tiktok', campaign: 'cli-launch' })).toThrow(/Unknown channel "tiktok"/);
+  });
+});
+
+describe('the DevRel prefix', () => {
+  test('every campaign starts with it, added only once', () => {
+    expect(buildUtmParams({ channel: 'x', campaign: 'blog-npm' }).campaign).toBe('devrel-blog-npm');
+    expect(buildUtmParams({ channel: 'x', campaign: 'DevRel blog npm' }).campaign).toBe('devrel-blog-npm');
+    expect(withPrefix('devrel')).toBe('devrel');
+  });
+
+  test('a fork can use its own prefix', () => {
+    expect(buildUtmParams({ channel: 'x', campaign: 'blog-npm', prefix: 'dx' })).toMatchObject({ campaign: 'dx-blog-npm', id: 'dx-blog-npm' });
+    expect(() => buildUtmParams({ channel: 'x', campaign: 'a', prefix: '!!' })).toThrow(/attribution prefix/);
+  });
+
+  test('isDevrelCampaign tells DevRel campaigns from everyone else', () => {
+    expect(isDevrelCampaign('devrel-blog-npm')).toBe(true);
+    expect(isDevrelCampaign('DevRel-Blog-NPM')).toBe(true);
+    expect(isDevrelCampaign('devrelations-summer')).toBe(false);
+    expect(isDevrelCampaign('spring-sale')).toBe(false);
+    expect(isDevrelCampaign('devrel')).toBe(false);
+    expect(isDevrelCampaign(undefined)).toBe(false);
+    expect(isDevrelCampaign('dx-blog', 'dx')).toBe(true);
   });
 });

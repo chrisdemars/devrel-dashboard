@@ -1,9 +1,16 @@
 // The UTM naming convention, in code. Pure functions, no I/O.
 //
-// Every shared link gets the same three answers: where it was posted
-// (utm_source), what kind of place that is (utm_medium) and what it promotes
-// (utm_campaign). Fixing the first two per channel keeps the analytics reports
-// free of near-duplicates such as "YouTube", "youtube.com" and "yt".
+// Every shared link gets the same answers: where it was posted (utm_source),
+// what kind of place that is (utm_medium) and which DevRel activity it belongs
+// to (utm_campaign, repeated as utm_id). Fixing the first two per channel keeps
+// the analytics reports free of near-duplicates such as "YouTube", "youtube.com"
+// and "yt", and leaves other teams' channel reports working.
+//
+// Attribution: the campaign always starts with a reserved prefix ("devrel" by
+// default, `attribution.campaignPrefix` in the config). That prefix is what
+// marks a visit, key event or sign-up as driven by DevRel, so no other team
+// should use it. The rest of the campaign names the activity, e.g.
+// "devrel-blog-npm-end-of-life", so every result maps back to one piece of work.
 //
 // Every value is lowercase ASCII with words joined by hyphens.
 
@@ -39,7 +46,6 @@ const CHANNELS = {
   x: { source: 'x', medium: 'social', use: 'Posts on X' },
   linkedin: { source: 'linkedin', medium: 'social', use: 'Posts on LinkedIn' },
   facebook: { source: 'facebook', medium: 'social', use: 'Posts on Facebook' },
-  blog: { source: 'blog', medium: 'referral', use: 'Links from one of your blog posts to another page' },
   newsletter: { source: 'newsletter', medium: 'email', use: 'Newsletters and other email' },
   conference: { medium: 'conference', content: 'slides', event: true, use: 'Conference slides and the QR code on them' },
   community: { medium: 'community', defaultPlatform: 'discord', use: 'Discord, forums and other community spaces' },
@@ -59,10 +65,16 @@ export interface ChannelInfo {
   use: string;
 }
 
+/** The campaign prefix used when the config does not set one. */
+export const DEFAULT_CAMPAIGN_PREFIX = 'devrel';
+
 export interface UtmParams {
   source: string;
   medium: string;
+  /** Always starts with the attribution prefix, e.g. "devrel-blog-npm-end-of-life". */
   campaign: string;
+  /** The same as the campaign: GA4 reports it as the campaign ID. */
+  id: string;
   content?: string;
   term?: string;
 }
@@ -70,8 +82,13 @@ export interface UtmParams {
 export interface UtmInput {
   /** One of CHANNEL_IDS. */
   channel: string;
-  /** What is being promoted, e.g. "cli-launch". Optional for a conference, where it defaults to the event. */
+  /**
+   * The DevRel activity the link belongs to, e.g. "blog-npm-end-of-life". The
+   * prefix is added for you. Optional for a conference, where it defaults to the event.
+   */
   campaign?: string;
+  /** The attribution prefix. Defaults to "devrel". */
+  prefix?: string;
   content?: string;
   term?: string;
   /** Livestream (required) and community (optional): where the link is posted. */
@@ -134,6 +151,18 @@ export function conferenceCampaign(event: string, date?: string | number): strin
   return slug.split('-').includes(year) ? slug : `${slug}-${year}`;
 }
 
+/** The campaign with the attribution prefix in front, added only once. */
+export function withPrefix(campaign: string, prefix = DEFAULT_CAMPAIGN_PREFIX): string {
+  const start = requireSlug('The attribution prefix', prefix);
+  return campaign === start || campaign.startsWith(`${start}-`) ? campaign : `${start}-${campaign}`;
+}
+
+/** True when a utm_campaign (or GA4 campaign name) marks DevRel work. Case is ignored. */
+export function isDevrelCampaign(campaign: string | undefined, prefix = DEFAULT_CAMPAIGN_PREFIX): boolean {
+  const value = campaign?.trim().toLowerCase() ?? '';
+  return value.startsWith(`${prefix.toLowerCase()}-`);
+}
+
 export function isChannel(value: string): value is ChannelId {
   return Object.hasOwn(CHANNELS, value);
 }
@@ -162,11 +191,12 @@ export function buildUtmParams(input: UtmInput): UtmParams {
 
   const source = channelSource(id, channel, input);
   // A conference link promotes the event itself unless a campaign says otherwise.
-  const campaign = channel.event && !input.campaign?.trim() ? source : requireSlug('A campaign', input.campaign);
+  const activity = channel.event && !input.campaign?.trim() ? source : requireSlug('A campaign', input.campaign);
+  const campaign = withPrefix(activity, input.prefix);
   const content = optionalSlug('The content', input.content) ?? channel.content;
   const term = optionalSlug('The term', input.term);
 
-  return { source, medium: channel.medium, campaign, ...(content && { content }), ...(term && { term }) };
+  return { source, medium: channel.medium, campaign, id: campaign, ...(content && { content }), ...(term && { term }) };
 }
 
 function parseUrl(value: string): URL {
@@ -196,7 +226,7 @@ function isUtmPair(pair: string): boolean {
 /**
  * Tags a link. Other query parameters and the #fragment are kept as they are;
  * any utm_* parameters already on the link are replaced. The order is always
- * source, medium, campaign, content, term.
+ * source, medium, campaign, id, content, term.
  */
 export function buildUtmUrl(input: UtmUrlInput): string {
   const url = parseUrl(input.url);
@@ -208,7 +238,7 @@ export function buildUtmUrl(input: UtmUrlInput): string {
     .slice(1)
     .split('&')
     .filter((pair) => pair && !isUtmPair(pair));
-  const tags = (['source', 'medium', 'campaign', 'content', 'term'] as const).flatMap((key) =>
+  const tags = (['source', 'medium', 'campaign', 'id', 'content', 'term'] as const).flatMap((key) =>
     utm[key] ? [`utm_${key}=${utm[key]}`] : [],
   );
   url.search = [...kept, ...tags].join('&');

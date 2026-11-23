@@ -2,51 +2,98 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { getStreams } from '@/lib/dashboards/streams';
+import { getContent } from '@/lib/dashboards/content';
 import { createLocalStore, readSnapshots, snapshotsToData, snapshotStamp, type LocalSnapshot } from '@/lib/data/local/store';
 import { parseFilters, type FilterContext } from '@/lib/filters';
+import { ga4Points } from '@/lib/sources/ga4';
 
-const day = (date: string, value: number) => ({ date, value });
-const snapshot = (generatedAt: string, platforms: Record<string, unknown>, extra: LocalSnapshot['sources'] = {}): LocalSnapshot => ({
-  generatedAt,
-  sources: { metricool: { status: 'ok', metrics: { platforms } }, ...extra },
+const visit = (date: string, metric: string, value: number, dimensions: Record<string, string> = { campaign: 'devrel-blog-a', channel: 'linkedin' }) => ({
+  date,
+  metric,
+  value,
+  dimensions,
 });
 
-const older = snapshot('2026-10-10T06:00:00.000Z', {
-  x: { daily: { followers: [day('2026-10-08', 100), day('2026-10-09', 101)], impressions: [day('2026-10-08', 40), day('2026-10-09', 50)] } },
-});
-const newer = snapshot('2026-10-11T06:00:00.000Z', {
-  x: { daily: { followers: [day('2026-10-09', 102), day('2026-10-10', 104)], impressions: [day('2026-10-09', 55), day('2026-10-10', 60)], interactions: [day('2026-10-10', 6)] } },
-  youtube: { daily: { views: [day('2026-10-10', 900)], reach: [day('2026-10-10', 5)] } },
-});
+// A GA4 snapshot with DevRel visits, next to a Metricool snapshot holding
+// company-wide totals that must never reach the dashboard.
+const older: LocalSnapshot = {
+  generatedAt: '2026-10-10T06:00:00.000Z',
+  sources: {
+    ga4: { status: 'ok', metrics: { points: [visit('2026-10-08', 'sessions', 40), visit('2026-10-09', 'sessions', 50)] } },
+    metricool: { status: 'ok', metrics: { platforms: { linkedin: { daily: { followers: [{ date: '2026-10-09', value: 11000 }] } } } } },
+  },
+};
+const newer: LocalSnapshot = {
+  generatedAt: '2026-10-11T06:00:00.000Z',
+  sources: {
+    ga4: {
+      status: 'ok',
+      metrics: {
+        points: [
+          visit('2026-10-09', 'sessions', 55),
+          visit('2026-10-10', 'sessions', 60),
+          visit('2026-10-10', 'engaged_sessions', 30),
+          visit('2026-10-10', 'key_events', 4, { campaign: 'devrel-blog-a', channel: 'linkedin', event: 'demo_request' }),
+        ],
+      },
+    },
+  },
+};
 
 describe('snapshotsToData', () => {
-  it('turns Metricool series into metric points by platform; a later snapshot replaces the same day', () => {
+  it('reads the rows collectors tied to DevRel; a later snapshot replaces the same day', () => {
     const { points, lastCollected } = snapshotsToData([newer, older]);
-    const of = (metric: string, platform: string) =>
-      points.filter((p) => p.metric === metric && p.dimensions?.platform === platform).map((p) => [p.date, p.value]);
-    expect(of('followers', 'x')).toEqual([['2026-10-08', 100], ['2026-10-09', 102], ['2026-10-10', 104]]);
-    expect(of('social_impressions', 'x')).toEqual([['2026-10-08', 40], ['2026-10-09', 55], ['2026-10-10', 60]]);
-    expect(of('social_interactions', 'x')).toEqual([['2026-10-10', 6]]);
-    expect(of('video_views', 'youtube')).toEqual([['2026-10-10', 900]]);
-    // Reach counts the same people again, so it is not stored.
-    expect(points.some((p) => p.value === 5)).toBe(false);
-    expect(lastCollected.metricool).toBe(newer.generatedAt);
+    const of = (metric: string) => points.filter((p) => p.metric === metric).map((p) => [p.date, p.value]);
+    expect(of('sessions')).toEqual([['2026-10-08', 40], ['2026-10-09', 55], ['2026-10-10', 60]]);
+    expect(of('engaged_sessions')).toEqual([['2026-10-10', 30]]);
+    expect(points.find((p) => p.metric === 'key_events')).toMatchObject({
+      source: 'ga4',
+      dimensions: { campaign: 'devrel-blog-a', channel: 'linkedin', event: 'demo_request' },
+    });
+    expect(lastCollected).toEqual({ ga4: newer.generatedAt, metricool: older.generatedAt });
   });
 
-  it('skips failed sources and bad values', () => {
-    const failed: LocalSnapshot = { generatedAt: '2026-10-12T06:00:00.000Z', sources: { metricool: { status: 'error', error: '401' } } };
-    const bad = snapshot('2026-10-13T06:00:00.000Z', { x: { daily: { followers: [{ date: 'yesterday', value: 1 }, { date: '2026-10-13', value: Number.NaN }] } } });
+  it('never turns company-wide totals into numbers', () => {
+    const { points } = snapshotsToData([older]);
+    expect(points.some((p) => p.metric === 'followers')).toBe(false);
+    expect(points.every((p) => p.source === 'ga4')).toBe(true);
+  });
+
+  it('skips failed sources, unknown metrics and bad values', () => {
+    const failed: LocalSnapshot = { generatedAt: '2026-10-12T06:00:00.000Z', sources: { ga4: { status: 'error', error: '403' } } };
+    const bad: LocalSnapshot = {
+      generatedAt: '2026-10-13T06:00:00.000Z',
+      sources: {
+        ga4: {
+          status: 'ok',
+          metrics: { points: [visit('yesterday', 'sessions', 1), visit('2026-10-13', 'pageviews', 1), visit('2026-10-13', 'sessions', Number.NaN)] },
+        },
+      },
+    };
     expect(snapshotsToData([failed, bad]).points).toEqual([]);
     expect(snapshotsToData([failed]).lastCollected).toEqual({});
   });
+});
 
-  it('adds a YouTube subscriber reading, unless Metricool already reports YouTube followers', () => {
-    const channels = { youtube: { status: 'ok', metrics: { channels: { a: { subscribers: 300 }, b: { subscribers: 20 } } } } };
-    const alone = snapshotsToData([{ generatedAt: '2026-10-12T06:00:00.000Z', sources: channels }]);
-    expect(alone.points).toEqual([{ date: '2026-10-12', metric: 'followers', value: 320, source: 'youtube', dimensions: { platform: 'youtube' } }]);
-    const both = snapshotsToData([snapshot('2026-10-12T06:00:00.000Z', { youtube: { daily: { followers: [day('2026-10-11', 310)] } } }, channels)]);
-    expect(both.points.filter((p) => p.metric === 'followers').map((p) => p.source)).toEqual(['metricool']);
+describe('ga4Points', () => {
+  it('turns DevRel campaign rows into daily points, leaving out empty rows', () => {
+    const points = ga4Points(
+      [
+        { date: '20261120', sessionCampaignName: 'DevRel-Blog-A', sessionSource: 'linkedin', sessions: 12, engagedSessions: 7 },
+        { date: '20261121', sessionCampaignName: 'devrel-blog-a', sessionSource: 'x', sessions: 0, engagedSessions: 0 },
+      ],
+      [{ date: '20261120', sessionCampaignName: 'devrel-blog-a', sessionSource: 'linkedin', eventName: 'demo_request', keyEvents: 2 }],
+    );
+    expect(points).toEqual([
+      { date: '2026-11-20', metric: 'sessions', value: 12, dimensions: { campaign: 'devrel-blog-a', channel: 'linkedin' } },
+      { date: '2026-11-20', metric: 'engaged_sessions', value: 7, dimensions: { campaign: 'devrel-blog-a', channel: 'linkedin' } },
+      {
+        date: '2026-11-20',
+        metric: 'key_events',
+        value: 2,
+        dimensions: { campaign: 'devrel-blog-a', channel: 'linkedin', event: 'demo_request' },
+      },
+    ]);
   });
 });
 
@@ -69,8 +116,8 @@ describe('reading snapshots from a folder', () => {
 
 describe('createLocalStore', () => {
   const statuses = [
-    { id: 'metricool', name: 'Metricool', category: 'social' as const, status: 'ok' as const },
-    { id: 'ga4', name: 'GA4', category: 'web' as const, status: 'not_configured' as const, missing: ['GA4_PROPERTY_ID'] },
+    { id: 'ga4', name: 'GA4', category: 'web' as const, status: 'ok' as const },
+    { id: 'crm', name: 'CRM', category: 'business' as const, status: 'placeholder' as const, note: 'No access yet.' },
   ];
   const store = createLocalStore(snapshotsToData([older, newer]), statuses, '2026-11-20');
 
@@ -80,29 +127,25 @@ describe('createLocalStore', () => {
     expect(await store.getActivities()).toEqual([]);
     expect(await store.getDealTotals()).toMatchObject({ count: 0, amountUsd: 0 });
     expect(await store.getTargets()).toEqual([]);
-    expect(await store.getMetricPoints({ metrics: ['video_views'] })).toHaveLength(1);
-    expect(await store.getMetricPoints({ from: '2026-10-10', to: '2026-10-10', metrics: ['followers'] })).toHaveLength(1);
+    expect(await store.getMetricPoints({ metrics: ['key_events'] })).toHaveLength(1);
+    expect(await store.getMetricPoints({ from: '2026-10-10', to: '2026-10-10', metrics: ['sessions'] })).toHaveLength(1);
   });
 
   it('reports source states, with when each last collected', async () => {
-    const [metricool, ga4] = await store.getSourceStatuses();
-    expect(metricool.lastCollectedAt).toBe(newer.generatedAt);
-    expect(ga4).toMatchObject({ status: 'not_configured', missing: ['GA4_PROPERTY_ID'] });
-    expect(ga4.lastCollectedAt).toBeUndefined();
+    const [ga4, crm] = await store.getSourceStatuses();
+    expect(ga4.lastCollectedAt).toBe(newer.generatedAt);
+    expect(crm).toMatchObject({ status: 'placeholder', note: 'No access yet.' });
+    expect(crm.lastCollectedAt).toBeUndefined();
   });
 
   it('with nothing collected, covers just today', async () => {
     expect(await createLocalStore({ points: [], lastCollected: {} }, [], '2026-11-20').getDateRange()).toEqual({ from: '2026-11-20', to: '2026-11-20' });
   });
 
-  it('feeds the Streams page real social numbers', async () => {
+  it('feeds the Content page visits from DevRel links', async () => {
     const context: FilterContext = { dataFrom: '2026-10-08', today: '2026-10-10' };
-    const { social, followers } = await getStreams(store, parseFilters(new URLSearchParams(''), context), context);
-    const x = social.table.find((row) => row.key === 'x')!;
-    expect(x).toMatchObject({ followers: 104, impressions: 155, interactions: 6 });
-    expect(x.rate).toBeCloseTo(6 / 155);
-    expect(social.table.find((row) => row.key === 'youtube')?.views).toBe(900);
-    expect(social.caption).toContain('X shows posts to the most people');
-    expect(followers.table.map((row) => row.key)).toEqual(['x']);
+    const { kpis } = await getContent(store, parseFilters(new URLSearchParams(''), context), context);
+    const visits = kpis.find((kpi) => kpi.id === 'sessions')!;
+    expect(visits).toMatchObject({ value: '155', attribution: 'tracked', label: 'Visits from DevRel links' });
   });
 });

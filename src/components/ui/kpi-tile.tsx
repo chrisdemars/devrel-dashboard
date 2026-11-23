@@ -1,3 +1,4 @@
+import { ATTRIBUTION_DEFINITIONS, ATTRIBUTION_LABELS, type Attribution } from '@/lib/attribution';
 import { describeDelta, formatNumber } from '@/lib/format';
 import { Card } from './card';
 import { cx } from './cx';
@@ -22,6 +23,8 @@ interface KpiTileProps {
   trend?: number[];
   /** The "so what" line: what the number means and what happens next. */
   note?: string;
+  /** How the number is tied to DevRel. Shown as a small label next to the name. */
+  attribution?: Attribution;
   className?: string;
 }
 
@@ -39,13 +42,25 @@ export function KpiTile({
   goodWhen = 'up',
   trend,
   note,
+  attribution,
   className,
 }: KpiTileProps) {
   const change = delta === undefined ? undefined : describeDelta(delta, goodWhen);
 
   return (
     <Card className={cx('flex flex-col gap-3', className)}>
-      <Eyebrow>{label}</Eyebrow>
+      <div className="flex items-start justify-between gap-3">
+        <Eyebrow>{label}</Eyebrow>
+        {attribution && (
+          <span
+            title={ATTRIBUTION_DEFINITIONS[attribution]}
+            className="shrink-0 rounded-sm border border-line px-1.5 py-0.5 font-mono text-[0.65rem] tracking-[0.12em] text-muted uppercase"
+          >
+            {ATTRIBUTION_LABELS[attribution]}
+            <span className="sr-only">: {ATTRIBUTION_DEFINITIONS[attribution]}</span>
+          </span>
+        )}
+      </div>
       <div className="flex items-end justify-between gap-4">
         <p className="text-4xl leading-none font-semibold tracking-tight">
           {typeof value === 'number' ? formatNumber(value) : value}

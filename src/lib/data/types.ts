@@ -109,9 +109,6 @@ export const METRICS = [
   'engaged_sessions', // per day, by channel
   'key_events', // per day, by event
   'followers', // total on that day, by platform
-  'social_impressions', // per day: times posts were shown, by platform
-  'social_interactions', // per day: likes, comments, shares and clicks, by platform
-  'video_views', // per day, by platform
 ] as const;
 
 export type MetricName = (typeof METRICS)[number];

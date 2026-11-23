@@ -63,8 +63,15 @@ describe('getStreams', () => {
   });
 
   it('names platforms whose source is not connected and reports nothing', async () => {
-    expect((await streams('')).missingPlatforms).toEqual([
-      { key: 'facebook', label: 'Facebook', note: expect.stringContaining('No access yet') },
+    const facebookMissing = createSampleStore({
+      ...data,
+      sourceStatuses: [
+        ...data.sourceStatuses,
+        { id: 'facebook', name: 'Facebook', category: 'social', status: 'not_configured', note: 'No access yet.' },
+      ],
+    });
+    expect((await streams('', facebookMissing)).missingPlatforms).toEqual([
+      { key: 'facebook', label: 'Facebook', note: 'No access yet.' },
     ]);
     const connected = createSampleStore({
       ...data,
@@ -74,23 +81,3 @@ describe('getStreams', () => {
   });
 });
 
-describe('social numbers', () => {
-  it('adds up impressions per platform, keeps each platform its color, and explains the leader', async () => {
-    const { createSampleStore } = await import('@/lib/data/sample/store');
-    const { sampleDataFromConfig } = await import('@/lib/data');
-    const { getStreams } = await import('@/lib/dashboards/streams');
-    const { parseFilters } = await import('@/lib/filters');
-    const data = sampleDataFromConfig();
-    const context = { dataFrom: data.range.from, today: data.range.to, launchDate: data.launchDate };
-    const filters = parseFilters(new URLSearchParams(`range=custom&from=${data.range.from}&to=${data.range.to}`), context);
-    const { social } = await getStreams(createSampleStore(data), filters, context);
-    const expected = data.metricPoints.filter((p) => p.metric === 'social_impressions').reduce((sum, p) => sum + p.value, 0);
-    expect(social.impressions).toBe(expected);
-    expect(social.table.reduce((sum, row) => sum + row.impressions, 0)).toBe(expected);
-    const values = social.table.map((row) => row.impressions);
-    expect(values).toEqual([...values].sort((a, b) => b - a));
-    expect(social.series.map((s) => s.key)).toEqual(['x', 'linkedin']);
-    expect(social.caption).toContain(social.table[0].label);
-    expect(social.table.find((row) => row.key === 'youtube')?.views).toBeGreaterThan(0);
-  });
-});

@@ -1,6 +1,7 @@
 // The numbers on the Streams and social page: what each livestream drew on
 // each platform, and how followers are growing.
 
+import type { Attribution } from '../attribution';
 import type { ActivityMetric, DataStore, DateRange } from '../data/types';
 import { comparisonRange, toDataFilter, type FilterContext, type Filters } from '../filters';
 import { formatNumber, formatPercent } from '../format';
@@ -9,6 +10,8 @@ import { labelFor, rowLabels, seriesFor, type ChartRow, type ChartSeries } from 
 import { standing, type Standing } from './standing';
 
 export interface StreamsKpi extends Standing {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   value: string;
@@ -51,22 +54,8 @@ export interface FollowerRow {
   change?: number;
 }
 
-export interface SocialRow {
-  key: string;
-  label: string;
-  followers: number;
-  impressions: number;
-  interactions: number;
-  /** Interactions per impression. Undefined without impressions. */
-  rate?: number;
-  /** Video views, for video platforms. */
-  views: number;
-}
-
 export interface Streams {
   kpis: StreamsKpi[];
-  /** Day-to-day social numbers per platform: what posts were shown and what people did with them. */
-  social: { series: ChartSeries[]; rows: ChartRow[]; table: SocialRow[]; impressions: number; caption: string };
   streams: { rows: StreamRow[]; caption: string };
   platforms: { rows: PlatformRow[]; caption: string };
   followers: { series: ChartSeries[]; rows: ChartRow[]; table: FollowerRow[]; caption: string };
@@ -197,40 +186,6 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
   const followers = metricTotal(followerPoints, 'followers', { to: range.to });
   const fastest = [...table].filter((row) => row.change !== undefined).sort((a, b) => b.change! - a.change!)[0];
 
-  // ---- Social: impressions, interactions and video views per platform ----
-  const platformOf = (point: { dimensions?: Record<string, string> }) => point.dimensions?.platform ?? 'unknown';
-  const socialPoints = points.filter((point) => ['social_impressions', 'social_interactions', 'video_views'].includes(point.metric));
-  const socialSeen = socialPoints.map(platformOf);
-  const own = (metric: 'social_impressions' | 'social_interactions' | 'video_views', key: string) =>
-    metricTotal(socialPoints.filter((point) => platformOf(point) === key), metric, range);
-  const socialTable: SocialRow[] = [...new Set([...socialSeen, ...table.map((row) => row.key)])]
-    .map((key) => {
-      const impressions = own('social_impressions', key);
-      const interactions = own('social_interactions', key);
-      return {
-        key,
-        label: labelFor(key),
-        followers: table.find((row) => row.key === key)?.end ?? 0,
-        impressions,
-        interactions,
-        ...(impressions > 0 && { rate: interactions / impressions }),
-        views: own('video_views', key),
-      };
-    })
-    .filter((row) => row.impressions > 0 || row.interactions > 0 || row.views > 0)
-    .sort((a, b) => b.impressions - a.impressions || b.views - a.views || a.label.localeCompare(b.label));
-  const shown = socialTable.filter((row) => row.impressions > 0);
-  const socialSeries = seriesFor(PLATFORMS, shown.map((row) => row.key), socialSeen);
-  const impressionBuckets = socialSeries.map(({ key }) =>
-    metricBuckets(socialPoints.filter((point) => platformOf(point) === key), 'social_impressions', range, 7),
-  );
-  const socialRows: ChartRow[] = (impressionBuckets[0] ?? []).map((bucket, i) => ({
-    ...rowLabels(bucket),
-    values: Object.fromEntries(socialSeries.map(({ key }, k) => [key, impressionBuckets[k][i].value])),
-  }));
-  const impressions = shown.reduce((sum, row) => sum + row.impressions, 0);
-  const engaging = [...shown].filter((row) => row.rate !== undefined && row.impressions >= 100).sort((a, b) => b.rate! - a.rate!)[0];
-
   const best = platforms[0];
   const biggest = [...rows].sort((a, b) => watched(b) - watched(a))[0];
   const reported = new Set([...platformKeys, ...everSeen]);
@@ -239,6 +194,7 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
     {
       id: 'streams',
       label: 'Livestreams',
+      attribution: 'produced',
       value: formatNumber(streams.length),
       ...standing(filters, days && comparePeriods(streams.length, previousIds.size, days)),
       trend: sumBuckets(streams.map(({ date }) => ({ date, value: 1 })), range, trendDays).map((bucket) => bucket.value),
@@ -251,6 +207,7 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
     {
       id: 'live_viewers',
       label: 'Live viewers',
+      attribution: 'direct',
       value: formatNumber(totals.live),
       ...standing(filters, days && comparePeriods(totals.live, previousTotals.live, days)),
       trend: viewerTrend('live'),
@@ -263,6 +220,7 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
     {
       id: 'replay_views',
       label: 'Replay views',
+      attribution: 'direct',
       value: formatNumber(totals.replays),
       ...standing(filters, days && comparePeriods(totals.replays, previousTotals.replays, days)),
       trend: viewerTrend('replays'),
@@ -274,7 +232,8 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
     },
     {
       id: 'followers',
-      label: 'Followers, all platforms',
+      label: 'Followers, DevRel-run accounts',
+      attribution: 'direct',
       value: formatNumber(followers),
       ...standing(filters, compareWith && compareMetric(followerPoints, 'followers', range, compareWith)),
       trend: metricBuckets(followerPoints, 'followers', range, trendDays).map((bucket) => bucket.value),
@@ -285,18 +244,6 @@ export async function getStreams(store: DataStore, filters: Filters, context: Fi
 
   return {
     kpis,
-    social: {
-      series: socialSeries,
-      rows: socialRows,
-      table: socialTable,
-      impressions,
-      caption:
-        shown.length === 0
-          ? 'No social numbers collected for this period.'
-          : `${shown[0].label} shows posts to the most people: ${formatNumber(shown[0].impressions)} of ${formatNumber(impressions)} impressions.${
-              engaging ? ` ${engaging.label} gets the most interaction per impression (${formatPercent(engaging.rate!)}).` : ''
-            }`,
-    },
     streams: {
       rows,
       caption: biggest

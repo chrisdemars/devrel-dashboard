@@ -4,7 +4,7 @@ import { BarList } from '@/components/charts/bar-list';
 import { ChartCard, ChartEmpty } from '@/components/charts/chart-card';
 import { TimeChart } from '@/components/charts/time-chart';
 import { FilterBar, FilterBarFallback } from '@/components/filters/filter-bar';
-import { AccessNeededCard, Card, Eyebrow, Headline, KpiTile } from '@/components/ui';
+import { Card, Eyebrow, Headline, KpiTile } from '@/components/ui';
 import config from '@/lib/config';
 import { getContent, type Content } from '@/lib/dashboards/content';
 import { labelFor } from '@/lib/dashboards/launch';
@@ -32,7 +32,7 @@ export default function ContentPage({ searchParams }: PageProps<'/content'>) {
 async function Dashboard({ searchParams }: Pick<PageProps<'/content'>, 'searchParams'>) {
   const { filters, context } = await getFilters(searchParams);
   const content = await getContent(getDataStore(), filters, context);
-  const { kpis, sessions, channels, subscribers } = content;
+  const { kpis, sessions, channels } = content;
   const tagged = filters.tags.length > 0;
 
   return (
@@ -41,8 +41,8 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/content'>, 'searchPa
         <FilterBar filters={filters} context={context} />
         {tagged && (
           <p className="text-sm text-muted">
-            Tags narrow the posts and their reach (marked “filtered by tag”). Site traffic and subscriber numbers are
-            not tagged, so they cover everything.
+            Tags narrow the posts, videos and their reach (marked “filtered by tag”). Visits from DevRel links are not
+            tagged: they cover everything DevRel drove, whatever the activity.
           </p>
         )}
       </div>
@@ -75,7 +75,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/content'>, 'searchPa
       </Card>
 
       <ChartCard
-        title={`Site sessions per ${sessions.bucket}, by channel`}
+        title={`Visits from DevRel links per ${sessions.bucket}, by channel`}
         caption={sessions.caption}
         legend={sessions.series}
         table={{
@@ -95,7 +95,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/content'>, 'searchPa
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <ChartCard
-          title="Engaged sessions by channel"
+          title="Engaged visits from DevRel links, by channel"
           caption={content.channelCaption}
           table={{
             columns: ['Channel', 'Sessions', 'Engaged sessions', 'Engaged'],
@@ -109,32 +109,6 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/content'>, 'searchPa
           )}
         </ChartCard>
 
-        {subscribers ? (
-          <ChartCard
-            title="YouTube subscribers"
-            caption={subscribers.caption}
-            mark="line"
-            table={{
-              columns: ['Week', 'Subscribers'],
-              rows: subscribers.rows.map((row) => [row.period, formatNumber(row.values.subscribers)]),
-            }}
-          >
-            {subscribers.rows.length > 1 ? (
-              <TimeChart
-                kind="line"
-                series={[{ key: 'subscribers', label: 'Subscribers', colorIndex: 0 }]}
-                rows={subscribers.rows}
-                label="YouTube subscribers over time"
-              />
-            ) : (
-              <ChartEmpty>Pick a range of two weeks or more to see the trend.</ChartEmpty>
-            )}
-          </ChartCard>
-        ) : (
-          <AccessNeededCard title="YouTube subscribers" source="YouTube">
-            Connect the YouTube source to track subscribers over time. See the Data sources page for what it needs.
-          </AccessNeededCard>
-        )}
       </div>
     </>
   );

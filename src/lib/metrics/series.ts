@@ -19,9 +19,6 @@ export const METRIC_KINDS: Record<MetricName, MetricKind> = {
   key_events: 'flow',
   active_users: 'level',
   followers: 'level',
-  social_impressions: 'flow',
-  social_interactions: 'flow',
-  video_views: 'flow',
 };
 
 /** Number of days in a range, counting both ends. Zero for a range that ends before it starts. */

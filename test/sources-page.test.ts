@@ -51,7 +51,7 @@ describe('getSourcesPage', () => {
   test('groups every source by category, in a fixed order, and counts each status', () => {
     const page = getSourcesPage(results);
     expect(page.groups.flatMap((group) => group.sources)).toHaveLength(allSources.length);
-    expect(page.groups.map((group) => group.category)).toEqual(['cli', 'web', 'social', 'content', 'events', 'business', 'capacity']);
+    expect(page.groups.map((group) => group.category)).toEqual(['web', 'social', 'content', 'events', 'business', 'capacity']);
     expect(page.counts.map((count) => count.status)).toEqual(['ok', 'not_configured', 'placeholder', 'error']);
     expect(page.counts.reduce((sum, count) => sum + count.count, 0)).toBe(allSources.length);
     for (const { status, count } of page.counts) expect(count).toBe(results.filter((r) => r.status === status).length);

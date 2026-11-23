@@ -1,21 +1,26 @@
 // Usage:
-//   npm run utm -- --url https://example.com/blog/post --channel youtube --campaign cli-launch
+//   npm run utm -- --url https://example.com/blog/post --channel youtube --campaign blog-npm-end-of-life
 //   npm run utm -- --url https://example.com/cli --channel conference --event "ExampleConf 2026" --qr
 //   npm run utm -- --list    show the channels and their source and medium
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
+import config from '../src/lib/config';
 import { qrSvg } from '../src/lib/qr';
 import { buildUtmParams, buildUtmUrl, listChannels, UtmError } from '../src/lib/utm';
 
 const QR_DIR = 'data/qr';
 
+const prefix = config.attribution.campaignPrefix;
+
 const USAGE = `Usage: npm run utm -- --url <link> --channel <channel> --campaign <name> [options]
 
   --url <link>        The link to tag (http or https)
   --channel <id>      Where the link will be shared (see --list)
-  --campaign <name>   What the link promotes, e.g. cli-launch
+  --campaign <name>   The DevRel activity the link belongs to, e.g. blog-npm-end-of-life.
+                      Becomes utm_campaign=${prefix}-<name>, which is how the dashboard
+                      knows the visit came from DevRel
   --event <name>      Conference: the event, e.g. "ExampleConf 2026". Also the campaign unless --campaign is set
   --date <date>       Conference: the event's year or date, added to the event when the name has no year
   --platform <name>   Livestream: youtube, twitch, linkedin, x or facebook. Community: discord, forum, ...
@@ -26,8 +31,10 @@ const USAGE = `Usage: npm run utm -- --url <link> --channel <channel> --campaign
   --list              Show the channels and their source and medium
   --help              Show this help
 
+Every link DevRel shares must come from here: links without the prefix are not counted.
+
 Examples:
-  npm run utm -- --url https://example.com/blog/post --channel youtube --campaign cli-launch
+  npm run utm -- --url https://example.com/blog/post --channel youtube --campaign blog-npm-end-of-life
   npm run utm -- --url https://example.com/cli --channel conference --event "ExampleConf 2026" --qr`;
 
 /** Stops with a plain message instead of a stack trace. */
@@ -81,13 +88,14 @@ async function main() {
   const channel = args.channel.trim().toLowerCase();
   const isConference = channel === 'conference';
   if (isConference && !args.event) fail('Missing --event: the conference name, e.g. --event "ExampleConf 2026".');
-  if (!isConference && !args.campaign) fail('Missing --campaign: what the link promotes, e.g. --campaign cli-launch.');
+  if (!isConference && !args.campaign) fail('Missing --campaign: the DevRel activity the link belongs to, e.g. --campaign blog-npm-end-of-life.');
 
   const wantsQr = Boolean(args.qr || args.out);
   const input = {
     url: args.url,
     channel,
     campaign: args.campaign,
+    prefix,
     // On a conference link the default content is "slides"; the QR code on the
     // same slide gets its own, so scans and typed links can be told apart.
     content: args.content ?? (wantsQr && isConference ? 'qr' : undefined),
