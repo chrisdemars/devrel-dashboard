@@ -2,6 +2,7 @@
 // deals sales linked to DevRel, and what each channel cost for what it
 // produced. Deals are read as totals only; individual deals are for admins.
 
+import type { Attribution } from '../attribution';
 import { quarterOf } from '../data/dates';
 import type { DataStore, DateRange } from '../data/types';
 import { comparisonRange, type FilterContext, type Filters } from '../filters';
@@ -21,6 +22,8 @@ import { bucketName, chartBucketDays, dealBuckets, labelFor, rowLabels, seriesFo
 import { standing, type Standing } from './standing';
 
 export interface PipelineKpi extends Standing {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   value: string;
@@ -135,7 +138,8 @@ export async function getPipeline(store: DataStore, filters: Filters, context: F
   const kpis: PipelineKpi[] = [
     {
       id: 'key_events',
-      label: 'Key events on the site',
+      label: 'Key events from DevRel links',
+      attribution: 'tracked',
       value: formatNumber(keyEvents),
       ...standing(filters, compareWith && compareMetric(points, 'key_events', range, compareWith), {
         actual: metricTotal(points, 'key_events', quarterSoFar),
@@ -152,6 +156,7 @@ export async function getPipeline(store: DataStore, filters: Filters, context: F
     {
       id: 'influenced_pipeline_usd',
       label: 'Influenced pipeline',
+      attribution: 'influenced',
       value: formatUsd(deals.amountUsd),
       ...standing(filters, previousDeals && days && comparePeriods(deals.amountUsd, previousDeals.amountUsd, days), {
         actual: quarterDeals.amountUsd,
@@ -165,6 +170,7 @@ export async function getPipeline(store: DataStore, filters: Filters, context: F
     {
       id: 'deals',
       label: 'Deals influenced',
+      attribution: 'influenced',
       value: formatNumber(deals.count),
       ...standing(filters, previousDeals && days && comparePeriods(deals.count, previousDeals.count, days)),
       trend: dealTrend.map((bucket) => bucket.count),
@@ -176,6 +182,7 @@ export async function getPipeline(store: DataStore, filters: Filters, context: F
     {
       id: 'won',
       label: 'Won so far',
+      attribution: 'influenced',
       value: formatUsd(deals.wonAmountUsd),
       ...standing(filters, previousDeals && days && comparePeriods(deals.wonAmountUsd, previousDeals.wonAmountUsd, days)),
       trend: dealTrend.map((bucket) => bucket.wonAmountUsd),

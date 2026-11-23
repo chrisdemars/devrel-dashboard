@@ -1,6 +1,7 @@
 // The numbers on the product launch page: installs by channel, activation,
 // weekly active users and where sign-ups heard about the product.
 
+import type { Attribution } from '../attribution';
 import { quarterOf } from '../data/dates';
 import type { DataStore, DateRange, MetricName, MetricPoint } from '../data/types';
 import { comparisonRange, type FilterContext, type Filters } from '../filters';
@@ -21,6 +22,8 @@ import { standing, type Standing } from './standing';
 export { chartBucketDays, labelFor, type ChartRow, type ChartSeries } from './shared';
 
 export interface LaunchKpi extends Standing {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   value: string;
@@ -65,6 +68,7 @@ export async function getLaunch(store: DataStore, filters: Filters, context: Fil
     return {
       id,
       label,
+      attribution: 'tracked',
       value: formatNumber(total(id)),
       ...standing(filters, compareWith && compareMetric(points, id, range, compareWith), {
         actual: total(id, quarterSoFar),
@@ -85,21 +89,22 @@ export async function getLaunch(store: DataStore, filters: Filters, context: Fil
   const kpis: LaunchKpi[] = [
     countKpi(
       'installs',
-      'Installs',
+      'Installs from DevRel links',
       byChannel[0] && installs > 0
-        ? `${labelFor(byChannel[0].key)} brings ${formatPercent(byChannel[0].share)} of installs.`
+        ? `${labelFor(byChannel[0].key)} brings ${formatPercent(byChannel[0].share)} of them.`
         : 'No installs in this period.',
     ),
     countKpi(
       'signups',
-      'Sign-ups',
+      'Sign-ups from DevRel links',
       installs > 0 && signups > 0
         ? `About one sign-up for every ${formatNumber(Math.max(Math.round(installs / signups), 1))} installs.`
         : 'No sign-ups in this period.',
     ),
     {
       id: 'activation_rate',
-      label: 'Activation rate',
+      label: 'Activation rate, DevRel sign-ups',
+      attribution: 'tracked',
       value: rate === undefined ? '–' : formatPercent(rate),
       ...standing(filters, compareWith && rate !== undefined ? comparePeriods(rate, previousRate) : undefined),
       trend: trend('activations').map((value, i) => (installTrend[i] > 0 ? value / installTrend[i] : 0)),
@@ -110,9 +115,9 @@ export async function getLaunch(store: DataStore, filters: Filters, context: Fil
     },
     countKpi(
       'active_users',
-      'Weekly active users',
+      'Weekly active users from DevRel',
       total('active_users') > 0
-        ? 'People who used the product in the latest week of this period.'
+        ? 'People who came through DevRel and used the product in the latest week of this period.'
         : 'No active users recorded in this period.',
     ),
   ];

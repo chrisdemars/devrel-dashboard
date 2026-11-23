@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatNumber } from '@/lib/format';
 import { getContent } from '@/lib/dashboards/content';
 import { sampleDataFromConfig } from '@/lib/data';
 import { addDays } from '@/lib/data/dates';
@@ -14,12 +15,12 @@ const wholeRange = `range=custom&from=${data.range.from}&to=${data.range.to}`;
 describe('getContent', () => {
   it('gives four headline numbers with trends and notes', async () => {
     const { kpis } = await content('');
-    expect(kpis.map((kpi) => kpi.id)).toEqual(['sessions', 'engagement_rate', 'reach', 'youtube_subscribers']);
+    expect(kpis.map((kpi) => kpi.id)).toEqual(['sessions', 'engagement_rate', 'reach', 'video_views']);
     for (const kpi of kpis) {
       expect(kpi.note.length).toBeGreaterThan(10);
       expect(kpi.trend.every(Number.isFinite)).toBe(true);
     }
-    expect(kpis.filter((kpi) => kpi.tagged).map((kpi) => kpi.id)).toEqual(['reach']);
+    expect(kpis.filter((kpi) => kpi.tagged).map((kpi) => kpi.id)).toEqual(['reach', 'video_views']);
   });
 
   it('lists every blog post in the range with the reach of all its formats, largest first', async () => {
@@ -80,12 +81,15 @@ describe('getContent', () => {
     expect(empty.kpis.find((kpi) => kpi.id === 'reach')).toMatchObject({ value: '0', note: 'No content matches these filters.' });
   });
 
-  it('leaves the subscriber chart out when no counts were ever collected', async () => {
-    const withoutFollowers = createSampleStore({
-      ...data,
-      metricPoints: data.metricPoints.filter((point) => point.metric !== 'followers'),
-    });
-    expect((await content('', withoutFollowers)).subscribers).toBeUndefined();
-    expect((await content('')).subscribers?.rows.length).toBeGreaterThan(1);
+  it('counts views of DevRel videos only: the activity log, never the channel', async () => {
+    const views = data.activityMetrics
+      .filter((m) => m.platform === 'youtube' && m.metric === 'views')
+      .filter((m) => data.activities.some((a) => a.id === m.activityId));
+    const all = await content(`range=custom&from=${data.range.from}&to=${data.range.to}`);
+    const tile = all.kpis.find((kpi) => kpi.id === 'video_views')!;
+    expect(tile.attribution).toBe('direct');
+    expect(tile.value).toBe(formatNumber(views.reduce((sum, m) => sum + m.value, 0)));
+    const noVideos = createSampleStore({ ...data, activityMetrics: data.activityMetrics.filter((m) => m.platform !== 'youtube') });
+    expect((await content('', noVideos)).kpis.find((kpi) => kpi.id === 'video_views')?.note).toMatch(/^No DevRel video views/);
   });
 });

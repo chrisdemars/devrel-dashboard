@@ -2,6 +2,7 @@
 // format made from it is counted, which posts bring visits and which bring
 // key events, and where site traffic comes from.
 
+import type { Attribution } from '../attribution';
 import { quarterOf } from '../data/dates';
 import type { Activity, ActivityMetric, DataStore, DateRange, MetricName } from '../data/types';
 import { comparisonRange, toDataFilter, type FilterContext, type Filters } from '../filters';
@@ -25,6 +26,8 @@ import { chartBucketDays, labelFor, type ChartRow, type ChartSeries } from './la
 import { standing, type Standing } from './standing';
 
 export interface ContentKpi extends Standing {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   value: string;
@@ -62,7 +65,6 @@ export interface Content {
   channels: { key: string; label: string; sessions: number; engaged: number; rate: number }[];
   channelCaption: string;
   /** Undefined when no subscriber counts have ever been collected. */
-  subscribers?: { rows: ChartRow[]; caption: string };
 }
 
 // Known traffic channels, in a fixed order so each keeps its color.
@@ -185,18 +187,21 @@ export async function getContent(store: DataStore, filters: Filters, context: Fi
     values: Object.fromEntries(keys.map((key, k) => [key, perChannel[k][i].value])),
   }));
 
-  // ---- YouTube ----
-  const youtube = points.filter((point) => point.metric === 'followers' && point.dimensions?.platform === 'youtube');
-  const subscribers = metricTotal(youtube, 'followers', range);
-  const weekly = metricBuckets(youtube, 'followers', range, 7);
-  const youtubeViews = activityMetrics
-    .filter((item) => item.platform === 'youtube' && item.metric === 'views')
-    .reduce((sum, item) => sum + item.value, 0);
+  // ---- Videos DevRel made ----
+  const videoMetrics = activityMetrics.filter((item) => item.platform === 'youtube' && item.metric === 'views');
+  const videoViews = videoMetrics.reduce((sum, item) => sum + item.value, 0);
+  const videos = new Set(videoMetrics.map((item) => item.activityId)).size;
+  const videoTrend = sumBuckets(
+    videoMetrics.map((item) => ({ date: dates.get(item.activityId) ?? range.from, value: item.value })),
+    range,
+    trendDays,
+  ).map((bucket) => bucket.value);
 
   const kpis: ContentKpi[] = [
     {
       id: 'sessions',
-      label: 'Site sessions',
+      label: 'Visits from DevRel links',
+      attribution: 'tracked',
       value: formatNumber(sessions),
       ...standing(filters, compareWith && compareMetric(points, 'sessions', range, compareWith), {
         actual: total('sessions', quarterSoFar),
@@ -213,7 +218,8 @@ export async function getContent(store: DataStore, filters: Filters, context: Fi
     },
     {
       id: 'engagement_rate',
-      label: 'Engaged sessions',
+      label: 'Engaged visits from DevRel links',
+      attribution: 'tracked',
       value: rate === undefined ? '–' : formatPercent(rate),
       ...standing(filters, compareWith && rate !== undefined ? comparePeriods(rate, previousRate) : undefined),
       trend: trend('engaged_sessions').map((value, i) => (sessionTrend[i] > 0 ? value / sessionTrend[i] : 0)),
@@ -226,6 +232,7 @@ export async function getContent(store: DataStore, filters: Filters, context: Fi
     {
       id: 'reach',
       label: 'Content reach',
+      attribution: 'direct',
       value: formatNumber(reach),
       ...standing(
         filters,
@@ -241,21 +248,21 @@ export async function getContent(store: DataStore, filters: Filters, context: Fi
       tagged: true,
     },
     {
-      id: 'youtube_subscribers',
-      label: 'YouTube subscribers',
-      value: formatNumber(subscribers),
-      ...standing(filters, compareWith && compareMetric(youtube, 'followers', range, compareWith)),
-      trend: trend('followers', youtube),
+      id: 'video_views',
+      label: 'Views of DevRel videos',
+      attribution: 'direct',
+      value: formatNumber(videoViews),
+      ...standing(filters, undefined),
+      trend: videoTrend,
       note:
-        youtubeViews > 0
-          ? `Videos published in this period have ${formatNumber(youtubeViews)} views.`
-          : 'No video views recorded in this period.',
-      tagged: false,
+        videoViews > 0
+          ? `${formatNumber(videos)} ${videos === 1 ? 'video' : 'videos'}, about ${formatNumber(Math.round(videoViews / videos))} views each.`
+          : 'No DevRel video views recorded in this period.',
+      tagged: true,
     },
   ];
 
   const best = posts[0];
-  const [firstWeek, lastWeek] = [weekly.find((bucket) => bucket.value > 0), weekly.at(-1)];
 
   return {
     kpis,
@@ -289,14 +296,5 @@ export async function getContent(store: DataStore, filters: Filters, context: Fi
     channelCaption: bestChannel
       ? `${bestChannel.label} visitors are the most engaged: ${formatPercent(bestChannel.rate)} stay, scroll or click.`
       : 'No sessions in this period.',
-    ...(youtube.length > 0 && {
-      subscribers: {
-        rows: weekly.map((bucket) => ({ ...rowLabels(bucket), values: { subscribers: bucket.value } })),
-        caption:
-          firstWeek && lastWeek && lastWeek.value > firstWeek.value
-            ? `Up ${formatNumber(lastWeek.value - firstWeek.value)} over this period, from ${formatNumber(firstWeek.value)} to ${formatNumber(lastWeek.value)}.`
-            : `${formatNumber(subscribers)} subscribers at the end of this period.`,
-      },
-    }),
   };
 }

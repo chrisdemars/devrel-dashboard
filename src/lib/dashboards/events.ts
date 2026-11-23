@@ -1,6 +1,7 @@
 // The numbers on the Events page: talks given, standing with conference
 // organizers, what each conference cost and produced, and invitations turned down.
 
+import type { Attribution } from '../attribution';
 import { inRange } from '../data/dates';
 import type { CfpStatus, Conference, DataStore, DateRange, DeclinedRequest } from '../data/types';
 import { comparisonRange, type FilterContext, type Filters } from '../filters';
@@ -10,6 +11,8 @@ import { bucketName, chartBucketDays, rowLabels, type ChartRow } from './shared'
 import { standing, type Standing } from './standing';
 
 export interface EventsKpi extends Standing {
+  /** How the number is tied to DevRel. */
+  attribution: Attribution;
   id: string;
   label: string;
   value: string;
@@ -132,6 +135,7 @@ export async function getEvents(store: DataStore, filters: Filters, context: Fil
     {
       id: 'talks',
       label: 'Talks given',
+      attribution: 'produced',
       value: formatNumber(talks.length),
       ...standing(filters, days && comparePeriods(talks.length, previous.length, days)),
       trend: trend(() => 1),
@@ -145,6 +149,7 @@ export async function getEvents(store: DataStore, filters: Filters, context: Fil
     {
       id: 'audience',
       label: 'Estimated audience',
+      attribution: 'direct',
       value: formatNumber(audience),
       ...standing(filters, days && comparePeriods(audience, sum(previous, 'estAudience'), days)),
       trend: trend((c) => c.estAudience ?? 0),
@@ -156,6 +161,7 @@ export async function getEvents(store: DataStore, filters: Filters, context: Fil
     {
       id: 'leads',
       label: 'Leads passed to sales',
+      attribution: 'tracked',
       value: formatNumber(leads),
       ...standing(filters, days && comparePeriods(leads, previousLeads, days)),
       trend: trend((c) => c.leadsToSales ?? 0),
@@ -167,6 +173,7 @@ export async function getEvents(store: DataStore, filters: Filters, context: Fil
     {
       id: 'cost_per_lead',
       label: 'Cost per lead',
+      attribution: 'tracked',
       value: perLead === undefined ? '–' : formatUsd(Math.round(perLead)),
       ...standing(filters, compareWith && perLead !== undefined ? comparePeriods(perLead, previousPerLead) : undefined),
       goodWhen: 'down',

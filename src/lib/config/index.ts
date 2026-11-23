@@ -11,7 +11,7 @@ const config: DevrelConfig = parseConfig(userConfig);
 export default config;
 
 /**
- * Reads a setting by its dotted path, e.g. 'packages.npm'.
+ * Reads a setting by its dotted path, e.g. 'ga4.keyEvents'.
  * Returns undefined when the path does not exist.
  */
 export function configValue(path: string): unknown {

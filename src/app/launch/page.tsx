@@ -38,7 +38,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/launch'>, 'searchPar
       <div className="flex flex-col gap-2">
         <FilterBar filters={filters} context={context} />
         {filters.tags.length > 0 && (
-          <p className="text-sm text-muted">Tags apply to activities. The product numbers on this page are not tagged, so they cover everything.</p>
+          <p className="text-sm text-muted">Tags apply to activities. The product numbers on this page are not tagged: they cover everything DevRel drove, whatever the activity.</p>
         )}
       </div>
 
@@ -49,7 +49,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/launch'>, 'searchPar
       </section>
 
       <ChartCard
-        title={`Installs per ${installs.bucket}, by channel`}
+        title={`Installs from DevRel links per ${installs.bucket}, by channel`}
         caption={installs.caption}
         legend={installs.series}
         table={{

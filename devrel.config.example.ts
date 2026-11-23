@@ -29,19 +29,8 @@ export default defineConfig({
 
   sources: {
     // 'all', or a list of source ids from `npm run status`,
-    // e.g. ['npm', 'github', 'ga4', 'youtube', 'conferences'].
+    // e.g. ['ga4', 'metricool', 'conferences'].
     enabled: 'all',
-  },
-
-  // Public package and repo names to track. A source stays "not_configured"
-  // until it has at least one name.
-  packages: {
-    npm: [], // e.g. ['@acme/cli']
-    homebrewFormulae: [],
-    homebrewCasks: [],
-    pypi: [],
-    docker: [], // e.g. ['acme/cli']
-    github: [], // e.g. ['acme/cli', 'acme/sdk']
   },
 
   ga4: {

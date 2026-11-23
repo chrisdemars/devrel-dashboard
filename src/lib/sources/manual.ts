@@ -45,15 +45,6 @@ function manualLog({ id, name, category, file, summarize }: ManualLog): Source {
   };
 }
 
-function latestBy(rows: CsvRow[], keyFn: (r: CsvRow) => string): Record<string, CsvRow> {
-  const latest: Record<string, CsvRow> = {};
-  for (const r of rows) {
-    const key = keyFn(r);
-    if (!latest[key] || r.date > latest[key].date) latest[key] = r;
-  }
-  return latest;
-}
-
 function countBy(rows: CsvRow[], column: string): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const r of rows) counts[r[column]] = (counts[r[column]] ?? 0) + 1;
@@ -63,20 +54,6 @@ function countBy(rows: CsvRow[], column: string): Record<string, number> {
 const REACH_COLUMNS = ['blog_sessions', 'short_views', 'stream_live_viewers', 'stream_replay_views', 'social_impressions'];
 
 const manual: Source[] = [
-  manualLog({
-    id: 'follower-counts',
-    name: 'Follower and subscriber counts (manual baseline)',
-    category: 'social',
-    file: 'follower-counts.csv',
-    summarize: (rows) => ({
-      latest: Object.fromEntries(
-        Object.entries(latestBy(rows, (r) => `${r.platform}:${r.account}`)).map(([k, r]) => [
-          k,
-          { date: r.date, followers: num(r.followers) },
-        ]),
-      ),
-    }),
-  }),
   manualLog({
     id: 'conferences',
     name: 'Conference talks and leads',
@@ -123,27 +100,6 @@ const manual: Source[] = [
     category: 'business',
     file: 'sales-flagged-deals.csv',
     summarize: (rows) => ({ deals: rows.length, amountUsd: sum(rows, 'amount_usd') }),
-  }),
-  manualLog({
-    id: 'facebook-export',
-    name: 'Facebook monthly export',
-    category: 'social',
-    file: 'facebook-export.csv',
-    summarize: (rows) => ({ reach: sum(rows, 'reach'), views: sum(rows, 'views'), engagements: sum(rows, 'engagements') }),
-  }),
-  manualLog({
-    id: 'other-package-installs',
-    name: 'Installs from other package managers (manual)',
-    category: 'cli',
-    file: 'other-package-installs.csv',
-    summarize: (rows) => ({
-      latest: Object.fromEntries(
-        Object.entries(latestBy(rows, (r) => `${r.package_manager}:${r.package}`)).map(([k, r]) => [
-          k,
-          { date: r.date, period: r.period, installs: num(r.installs) },
-        ]),
-      ),
-    }),
   }),
   manualLog({
     id: 'cross-team',

@@ -37,7 +37,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/pipeline'>, 'searchP
       <div className="flex flex-col gap-2">
         <FilterBar filters={filters} context={context} />
         {filters.tags.length > 0 && (
-          <p className="text-sm text-muted">Tags apply to activities. Key events and deals are not tagged, so this page covers everything.</p>
+          <p className="text-sm text-muted">Tags apply to activities. Key events from DevRel links and influenced deals are not tagged: they cover everything DevRel drove, whatever the activity.</p>
         )}
       </div>
 
@@ -48,7 +48,7 @@ async function Dashboard({ searchParams }: Pick<PageProps<'/pipeline'>, 'searchP
       </section>
 
       <ChartCard
-        title={`Key events per ${keyEvents.bucket}, by event`}
+        title={`Key events from DevRel links per ${keyEvents.bucket}, by event`}
         caption={keyEvents.caption}
         legend={keyEvents.series}
         table={{
